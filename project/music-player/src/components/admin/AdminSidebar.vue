@@ -1,103 +1,60 @@
 <script setup>
-import { RouterLink, useRoute } from "vue-router";
-import {
-  HomeIcon,
-  ChartBarIcon,
-  TableCellsIcon,
-  MusicalNoteIcon,
-  UserGroupIcon,
-  Cog6ToothIcon,
-  TrashIcon,
-  ChevronLeftIcon,
-} from "@heroicons/vue/24/outline";
-import { ShieldCheckIcon } from "@heroicons/vue/24/solid";
-
-defineProps({
-  collapsed: {
-    type: Boolean,
-    default: false,
-  },
-});
-
-defineEmits(["toggle"]);
+import { useRoute, RouterLink } from "vue-router";
 
 const route = useRoute();
 
 const menuItems = [
-  { name: "Dashboard", icon: HomeIcon, path: "/admin" },
-  { name: "Songs", icon: MusicalNoteIcon, path: "/admin/songs" },
-  { name: "Artists", icon: UserGroupIcon, path: "/admin/artists" },
-  { name: "Analytics", icon: ChartBarIcon, path: "/admin/analytics" },
-  { name: "Settings", icon: Cog6ToothIcon, path: "/admin/settings" },
+  { name: "Dashboard", path: "/admin", icon: "fa-home" },
+  { name: "Songs", path: "/admin/songs", icon: "fa-music" },
+  { name: "Artists", path: "/admin/artists", icon: "fa-users" },
+  { name: "Analytics", path: "/admin/analytics", icon: "fa-chart-bar" },
+  { name: "Settings", path: "/admin/settings", icon: "fa-cog" },
 ];
 </script>
 
 <template>
   <aside
-    :class="[
-      'fixed left-0 top-0 h-full bg-gray-800 text-white transition-all duration-300 z-50',
-      collapsed ? 'w-16' : 'w-64',
-    ]"
+    class="bg-dark text-white"
+    style="min-height: 100vh; width: 250px; transition: width 0.3s; position: fixed; left: 0; top: 0; z-index: 1000;"
   >
-    <!-- Sidebar Header -->
-    <div class="flex items-center justify-between p-4 border-b border-gray-700">
-      <div v-if="!collapsed" class="flex items-center space-x-2">
-        <ShieldCheckIcon class="w-6 h-6" />
-        <span class="text-lg font-semibold">Music Admin</span>
-      </div>
-      <button
-        @click="$emit('toggle')"
-        class="p-2 rounded hover:bg-gray-700 transition-colors"
-      >
-        <ChevronLeftIcon
-          :class="['w-5 h-5 transition-transform', collapsed ? 'rotate-180' : '']"
-        />
-      </button>
-    </div>
-
-    <!-- Navigation Menu -->
-    <nav class="flex-1 overflow-y-auto py-4">
-      <ul class="space-y-1 px-2">
-        <li v-for="item in menuItems" :key="item.path">
+    <nav class="p-3" style="padding-top: 60px;">
+      <ul class="list-unstyled mb-0">
+        <li v-for="item in menuItems" :key="item.path" class="mb-1">
           <RouterLink
             :to="item.path"
             :class="[
-              'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors',
-              route.path === item.path || (item.path === '/admin' && route.path.startsWith('/admin'))
-                ? 'bg-gray-700 text-white'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+              'd-flex align-items-center text-white text-decoration-none p-3 rounded',
+              (route.path === item.path || (item.path === '/admin' && route.path === '/admin')) ? 'bg-secondary' : ''
             ]"
+            style="transition: background-color 0.2s;"
           >
-            <component :is="item.icon" class="w-5 h-5 flex-shrink-0" />
-            <span v-if="!collapsed" class="flex-1">{{ item.name }}</span>
+            <i :class="['fa', item.icon, 'me-3']" style="width: 20px; text-align: center;"></i>
+            <span>{{ item.name }}</span>
           </RouterLink>
         </li>
       </ul>
     </nav>
-
-    <!-- Sidebar Footer -->
-    <div class="border-t border-gray-700 p-4">
-      <div class="flex items-center space-x-2">
-        <button
-          class="p-2 rounded hover:bg-gray-700 transition-colors"
-          title="Settings"
-        >
-          <Cog6ToothIcon class="w-5 h-5" />
-        </button>
-        <button
-          class="p-2 rounded hover:bg-gray-700 transition-colors"
-          title="Trash"
-        >
-          <TrashIcon class="w-5 h-5" />
-        </button>
-        <button
-          v-if="!collapsed"
-          @click="$emit('toggle')"
-          class="p-2 rounded hover:bg-gray-700 transition-colors ml-auto"
-        >
-          <ChevronLeftIcon class="w-5 h-5" />
-        </button>
-      </div>
+    <div class="px-3 pb-3 d-flex gap-2" style="position: absolute; bottom: 0; width: 100%;">
+      <button
+        class="btn btn-sm btn-outline-light"
+        title="Toggle Sidebar"
+        style="flex: 1;"
+      >
+        <i class="fa fa-arrow-left"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-light" title="Settings">
+        <i class="fa fa-cog"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-light" title="Delete">
+        <i class="fa fa-trash"></i>
+      </button>
     </div>
   </aside>
 </template>
+
+<style scoped>
+a:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+</style>
+

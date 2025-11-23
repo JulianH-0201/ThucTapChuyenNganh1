@@ -1,81 +1,78 @@
-import { defineStore } from 'pinia'
-import artist from '../artist.json'
+// stores/music.js
+import { defineStore } from "pinia";
+import { ref } from "vue";
 
-export const useSongStore = defineStore('song', {
-  state: () => ({
-    isPlaying: false,
-    audio: null,
-    currentArtist: null,
-    currentTrack: null
-  }),
-  actions: {
-    loadSong(artist, track) {
-        this.currentArtist = artist
-        this.currentTrack = track
+export const useMusicStore = defineStore("music", () => {
+  // State
+  const artists = ref([]);
+  const currentTrack = ref(null);
+  const currentArtist = ref(null);
+  const currentAlbum = ref(null);
+  const loading = ref(false);
+  const error = ref(null);
 
-        /*run if this.audio exist and not null*/
-        if (this.audio && this.audio.src) {
-            this.audio.pause()
-            this.isPlaying = false
-            this.audio.src = ''
-        }
+  // Getters
+  const allTracks = () => {
+    const tracks = [];
+    artists.value.forEach((artist) => {
+      artist.albums?.forEach((album) => {
+        album.tracks?.forEach((track) => {
+          tracks.push({
+            ...track,
+            artistName: artist.artistName,
+            albumName: album.name,
+            albumCover: album.albumCover,
+          });
+        });
+      });
+    });
+    return tracks;
+  };
 
-        this.audio = new Audio()
-        this.audio.src = track.path
+  // Actions
+  const fetchArtists = async () => {
+    loading.value = true;
+    error.value = null;
 
-        setTimeout(() => {
-            this.isPlaying = true
-            this.audio.play()
-        }, 200)
-    },
+    try {
+      const response = await fetch("http://localhost:3000/api/artists");
 
-    playOrPauseSong() {
-        if (this.audio.paused) {
-            this.isPlaying = true
-            this.audio.play()
-        } else {
-            this.isPlaying = false
-            this.audio.pause()
-        }
-    },
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    playOrPauseThisSong(artist, track) {
-        /*If no song is played, load new song, else play or pause song */
-        if (!this.audio || !this.audio.src || (this.currentTrack.id !== track.id)) {
-            this.loadSong(artist, track)
-            return
-        }
-
-        this.playOrPauseSong()
-    },
-
-    prevSong(currentTrack) {
-        let track = artist.tracks[currentTrack.id - 2]
-        this.loadSong(artist, track)
-    },
-
-    nextSong(currentTrack) {
-        if (currentTrack.id === artist.tracks.length) {
-            let track = artist.tracks[0]
-            this.loadSong(artist, track)
-        } else {
-            let track = artist.tracks[currentTrack.id]
-            this.loadSong(artist, track)
-        }
-    },
-
-    playFromFirst() {
-        this.resetState()
-        let track = artist.tracks[0]
-        this.loadSong(artist, track)
-    },
-
-    resetState() {
-        this.isPlaying = false
-        this.audio = null
-        this.currentArtist = null
-        this.currentTrack = null
+      const data = await response.json();
+      artists.value = data;
+    } catch (err) {
+      error.value = err.message;
+      console.error("Failed to fetch artists:", err);
+    } finally {
+      loading.value = false;
     }
-  },
-  persist: true
-})
+  };
+
+  const setCurrentTrack = (track, artist, album) => {
+    currentTrack.value = track;
+    currentArtist.value = artist;
+    currentAlbum.value = album;
+  };
+
+  const clearCurrentTrack = () => {
+    currentTrack.value = null;
+    currentArtist.value = null;
+    currentAlbum.value = null;
+  };
+
+  return {
+    artists,
+    currentTrack,
+    currentArtist,
+    currentAlbum,
+    loading,
+    error,
+    allTracks,
+    fetchArtists,
+    setCurrentTrack,
+    clearCurrentTrack,
+  };
+});

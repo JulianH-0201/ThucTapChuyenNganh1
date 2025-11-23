@@ -1,45 +1,30 @@
 <script setup>
-import { RouterLink, RouterView, useRouter } from "vue-router";
-import { ref } from "vue";
-import {
-  HomeIcon,
-  ChartBarIcon,
-  TableCellsIcon,
-  PuzzlePieceIcon,
-  DocumentIcon,
-  Bars3Icon,
-  LinkIcon,
-  Cog6ToothIcon,
-  TrashIcon,
-  ChevronLeftIcon,
-} from "@heroicons/vue/24/outline";
+import { RouterView, useRouter } from "vue-router";
 import AdminHeader from "@/components/admin/AdminHeader.vue";
 import AdminSidebar from "@/components/admin/AdminSidebar.vue";
 
 const router = useRouter();
-const sidebarCollapsed = ref(false);
 
 const handleLogout = () => {
-  // Add logout logic here
-  router.push("/login");
+  router.push("/auth/login");
 };
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-vh-100 bg-light d-flex">
     <!-- Sidebar -->
-    <AdminSidebar :collapsed="sidebarCollapsed" @toggle="sidebarCollapsed = !sidebarCollapsed" />
+    <AdminSidebar />
 
-    <!-- Main Content Area -->
-    <div :class="['transition-all duration-300', sidebarCollapsed ? 'ml-16' : 'ml-64']">
-      <!-- Header -->
+    <!-- Main Content -->
+    <div
+      class="flex-grow-1 d-flex flex-column"
+      style="margin-left: 250px; transition: margin-left 0.3s;"
+    >
       <AdminHeader @logout="handleLogout" />
 
-      <!-- Page Content -->
-      <main class="p-6">
+      <main class="flex-grow-1 bg-white p-4" style="overflow-y: auto;">
         <RouterView />
       </main>
     </div>
   </div>
 </template>
-

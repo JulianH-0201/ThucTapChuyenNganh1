@@ -1,2 +1,5 @@
-# Node modules
-project/node_modules/
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
