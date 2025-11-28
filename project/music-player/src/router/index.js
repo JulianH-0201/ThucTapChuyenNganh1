@@ -10,6 +10,7 @@ import AdminLayout from "@/layouts/AdminLayout.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 import DashboardView from "@/views/admin/DashboardView.vue";
+import AlbumDetailView from "../views/AlbumDetailView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,6 +33,11 @@ const router = createRouter({
           path: "discography",
           name: "discography",
           component: DiscographyView,
+        },
+        {
+          path: "discography/:artistSlug/:albumSlug",
+          name: "album-detail",
+          component: AlbumDetailView,
         },
         {
           path: "contact",

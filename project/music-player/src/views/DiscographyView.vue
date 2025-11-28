@@ -1,272 +1,177 @@
 <script setup>
-import Hero from '@/components/Hero.vue';
+import { computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
+
+import Hero from "@/components/Hero.vue";
+import { useMusicStore, URL } from "@/stores/song";
+import { slugify } from "@/utils/slugify";
+
+const router = useRouter();
+const musicStore = useMusicStore();
+const { artists, loading, error } = storeToRefs(musicStore);
+
+onMounted(() => {
+  if (!artists.value.length && !loading.value) {
+    musicStore.fetchArtists();
+  }
+});
+
+const albums = computed(() =>
+  artists.value.flatMap((artist, artistIdx) =>
+    (artist.albums || []).map((album, albumIdx) => ({
+      ...album,
+      artistName: artist.artistName,
+      key: `${artistIdx}-${albumIdx}`,
+      cover: album.albumCover?.startsWith("http")
+        ? album.albumCover
+        : `${URL}${album.albumCover}`,
+      artistSlug: slugify(artist.artistName || `artist-${artistIdx}`),
+      albumSlug: slugify(album.name || `album-${albumIdx}`),
+    }))
+  )
+);
+
+const statusMessage = computed(() => {
+  if (loading.value) {
+    return { type: "info", text: "Loading albums…" };
+  }
+  if (error.value) {
+    return { type: "error", text: error.value };
+  }
+  if (!albums.value.length) {
+    return { type: "info", text: "No albums available yet." };
+  }
+  return null;
+});
+
+const openAlbum = (album) => {
+  router.push({
+    name: "album-detail",
+    params: {
+      artistSlug: album.artistSlug,
+      albumSlug: album.albumSlug,
+    },
+  });
+};
 </script>
 
 <template>
   <Hero />
-  <!-- music_area  -->
-  <div class="music_area music_gallery inc_padding">
+
+  <section class="music_area music_gallery inc_padding discography-list">
     <div class="container">
-      <div class="row align-items-center justify-content-center mb-20">
-        <div class="col-xl-10">
-          <div class="row align-items-center">
-            <div class="col-xl-9 col-md-9">
-              <div class="music_field">
-                <div class="thumb">
-                  <img src="/img/music_man/1.png" alt="" />
-                </div>
-                <div class="audio_name">
-                  <div class="name">
-                    <h4>Frando Kally</h4>
-                    <p>10 November, 2019</p>
+      <div v-if="statusMessage" :class="['state-message', statusMessage.type]">
+        {{ statusMessage.text }}
+      </div>
+      <template v-else>
+        <div
+          v-for="album in albums"
+          :key="album.key"
+          class="row align-items-center justify-content-center mb-20"
+        >
+          <div class="col-xl-10">
+            <div class="row align-items-center album-row shadow-sm">
+              <div class="col-xl-9 col-md-9">
+                <div
+                  class="music_field album-field"
+                  role="button"
+                  tabindex="0"
+                  @click="openAlbum(album)"
+                  @keyup.enter="openAlbum(album)"
+                >
+                  <div class="thumb">
+                    <img :src="album.cover" :alt="album.name" loading="lazy" />
                   </div>
-                  <audio preload="auto" controls>
-                    <source src="https://www.w3schools.com/html/horse.mp3" />
-                  </audio>
+                  <div class="audio_name">
+                    <div class="name">
+                      <h4>{{ album.name }}</h4>
+                      <p>
+                        {{ album.artistName }} • {{ album.releaseYear || "—" }}
+                      </p>
+                      <p>${{ album.price }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="col-xl-3 col-md-3">
-              <div class="music_btn">
-                <a href="#" class="boxed-btn">buy albam</a>
+              <div class="col-xl-3 col-md-3">
+                <div class="music_btn">
+                  <a href="#" class="boxed-btn">buy album</a>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="row align-items-center justify-content-center mb-20">
-        <div class="col-xl-10">
-          <div class="row align-items-center">
-            <div class="col-xl-9 col-md-9">
-              <div class="music_field">
-                <div class="thumb">
-                  <img src="/img/music_man/2.png" alt="" />
-                </div>
-                <div class="audio_name">
-                  <div class="name">
-                    <h4>Frando Kally</h4>
-                    <p>10 November, 2019</p>
-                  </div>
-                  <audio preload="auto" controls>
-                    <source src="https://www.w3schools.com/html/horse.mp3" />
-                  </audio>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-md-3">
-              <div class="music_btn">
-                <a href="#" class="boxed-btn">buy albam</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row align-items-center justify-content-center mb-20">
-        <div class="col-xl-10">
-          <div class="row align-items-center">
-            <div class="col-xl-9 col-md-9">
-              <div class="music_field">
-                <div class="thumb">
-                  <img src="/img/music_man/3.png" alt="" />
-                </div>
-                <div class="audio_name">
-                  <div class="name">
-                    <h4>Frando Kally</h4>
-                    <p>10 November, 2019</p>
-                  </div>
-                  <audio preload="auto" controls>
-                    <source src="https://www.w3schools.com/html/horse.mp3" />
-                  </audio>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-md-3">
-              <div class="music_btn">
-                <a href="#" class="boxed-btn">buy albam</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row align-items-center justify-content-center mb-20">
-        <div class="col-xl-10">
-          <div class="row align-items-center">
-            <div class="col-xl-9 col-md-9">
-              <div class="music_field">
-                <div class="thumb">
-                  <img src="/img/music_man/4.png" alt="" />
-                </div>
-                <div class="audio_name">
-                  <div class="name">
-                    <h4>Frando Kally</h4>
-                    <p>10 November, 2019</p>
-                  </div>
-                  <audio preload="auto" controls>
-                    <source src="https://www.w3schools.com/html/horse.mp3" />
-                  </audio>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-md-3">
-              <div class="music_btn">
-                <a href="#" class="boxed-btn">buy albam</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row align-items-center justify-content-center mb-20">
-        <div class="col-xl-10">
-          <div class="row align-items-center">
-            <div class="col-xl-9 col-md-9">
-              <div class="music_field">
-                <div class="thumb">
-                  <img src="/img/music_man/5.png" alt="" />
-                </div>
-                <div class="audio_name">
-                  <div class="name">
-                    <h4>Frando Kally</h4>
-                    <p>10 November, 2019</p>
-                  </div>
-                  <audio preload="auto" controls>
-                    <source src="https://www.w3schools.com/html/horse.mp3" />
-                  </audio>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-md-3">
-              <div class="music_btn">
-                <a href="#" class="boxed-btn">buy albam</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row align-items-center justify-content-center mb-20">
-        <div class="col-xl-10">
-          <div class="row align-items-center">
-            <div class="col-xl-9 col-md-9">
-              <div class="music_field">
-                <div class="thumb">
-                  <img src="/img/music_man/6.png" alt="" />
-                </div>
-                <div class="audio_name">
-                  <div class="name">
-                    <h4>Frando Kally</h4>
-                    <p>10 November, 2019</p>
-                  </div>
-                  <audio preload="auto" controls>
-                    <source src="https://www.w3schools.com/html/horse.mp3" />
-                  </audio>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-md-3">
-              <div class="music_btn">
-                <a href="#" class="boxed-btn">buy albam</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </template>
     </div>
-  </div>
-  <!-- music_area end  -->
-
-  <!-- youtube_video_area  -->
-  <div class="youtube_video_area">
-    <div class="container-fluid p-0">
-      <div class="row no-gutters">
-        <div class="col-xl-3 col-lg-3 col-md-6">
-          <div class="single_video">
-            <div class="thumb">
-              <img src="/img/video/1.png" alt="" />
-            </div>
-            <div class="hover_elements">
-              <div class="video">
-                <a
-                  class="popup-video"
-                  href="https://www.youtube.com/watch?v=Hzmp3z6deF8"
-                >
-                  <i class="fa fa-play"></i>
-                </a>
-              </div>
-
-              <div class="hover_inner">
-                <span>New York Show-2018</span>
-                <h3><a href="#">Shadows of My Dream</a></h3>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-lg-3 col-md-6">
-          <div class="single_video">
-            <div class="thumb">
-              <img src="/img/video/2.png" alt="" />
-            </div>
-            <div class="hover_elements">
-              <div class="video">
-                <a
-                  class="popup-video"
-                  href="https://www.youtube.com/watch?v=Hzmp3z6deF8"
-                >
-                  <i class="fa fa-play"></i>
-                </a>
-              </div>
-
-              <div class="hover_inner">
-                <span>New York Show-2018</span>
-                <h3><a href="#">Shadows of My Dream</a></h3>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-lg-3 col-md-6">
-          <div class="single_video">
-            <div class="thumb">
-              <img src="/img/video/3.png" alt="" />
-            </div>
-            <div class="hover_elements">
-              <div class="video">
-                <a
-                  class="popup-video"
-                  href="https://www.youtube.com/watch?v=Hzmp3z6deF8"
-                >
-                  <i class="fa fa-play"></i>
-                </a>
-              </div>
-
-              <div class="hover_inner">
-                <span>New York Show-2018</span>
-                <h3><a href="#">Shadows of My Dream</a></h3>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-3 col-lg-3 col-md-6">
-          <div class="single_video">
-            <div class="thumb">
-              <img src="/img/video/4.png" alt="" />
-            </div>
-            <div class="hover_elements">
-              <div class="video">
-                <a
-                  class="popup-video"
-                  href="https://www.youtube.com/watch?v=Hzmp3z6deF8"
-                >
-                  <i class="fa fa-play"></i>
-                </a>
-              </div>
-
-              <div class="hover_inner">
-                <span>New York Show-2018</span>
-                <h3><a href="#">Shadows of My Dream</a></h3>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- / youtube_video_area  -->
+  </section>
 </template>
+
+<style scoped>
+.discography-list {
+  background: #fff;
+  padding-top: 80px;
+  padding-bottom: 100px;
+}
+
+.section_title p {
+  color: #111;
+  margin-top: 12px;
+}
+
+.state-message {
+  text-align: center;
+  color: #111;
+  padding: 60px 0;
+}
+
+.state-message.error {
+  color: #dc2626;
+}
+
+.album-row {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 10px;
+}
+
+.album-field {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+}
+
+.album-field:focus-visible {
+  outline: 2px solid #fba100;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.album-field .thumb {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.album-field .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.album-field .name h4 {
+  margin-bottom: 4px;
+}
+
+.album-field .name p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.music_btn .boxed-btn {
+  width: 100%;
+  text-align: center;
+}
+</style>
