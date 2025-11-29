@@ -1,20 +1,48 @@
 <script setup>
 import { ref } from "vue";
-import { useRouter, RouterLink } from "vue-router";
-
+import { useRouter } from "vue-router";
+import { URL } from "../stores/song";
+import { useUserStore } from "../stores/user";
+import { storeToRefs } from "pinia";
+const userStore = useUserStore();
+const { currentUserName, login } = storeToRefs(userStore);
 const router = useRouter();
 const email = ref("");
 const password = ref("");
 const submitting = ref(false);
 
-function submit(e) {
+async function submit(e) {
   e.preventDefault();
   submitting.value = true;
-  // simulate auth delay
-  setTimeout(() => {
-    submitting.value = false;
-    router.push("/");
-  }, 700);
+
+  try {
+    const response = await fetch(`${URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email.value,
+        password: password.value,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.success && result.message === "Login successful") {
+      currentUserName.value = result.name;
+      login.value = true;
+      localStorage.setItem("user", result.name);
+      alert("Login successful!");
+      router.push("/");
+    } else {
+      alert("Login failed: " + result.message);
+    }
+  } catch (error) {
+    alert("Error: " + error);
+  }
+
+  submitting.value = false;
 }
 </script>
 

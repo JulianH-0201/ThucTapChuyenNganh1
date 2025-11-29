@@ -11,9 +11,8 @@ onMounted(() => {
     heroTitle.value = "Discography";
   } else if (route.path === "/contact") {
     heroTitle.value = "Contact Us";
-  } else if (route.path === "/contact") {
-    heroTitle.value = "Contact Us";
-  }
+  } 
+  
 });
 </script>
 

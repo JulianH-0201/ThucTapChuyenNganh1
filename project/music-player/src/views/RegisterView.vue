@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
+import { URL } from "../stores/song";
 
 const router = useRouter();
 const name = ref("");
@@ -9,17 +10,44 @@ const password = ref("");
 const password2 = ref("");
 const submitting = ref(false);
 
-function submit(e) {
+async function submit(e) {
   e.preventDefault();
+  //check passwords match
   if (password.value !== password2.value) {
-    alert("Passwords do not match");
+    alert("Passwords do not match!");
     return;
   }
+  
   submitting.value = true;
-  setTimeout(() => {
-    submitting.value = false;
-    router.push("/auth/login");
-  }, 700);
+
+  try {
+    const response = await fetch(`${URL}/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        //add name field
+        name: name.value, 
+        email: email.value,
+        password: password.value,
+      }),
+    });
+
+    const result = await response.text();
+
+    if (result === "USER SAVED") {
+      alert("Register successful!");
+      //move to login page
+      router.push("/auth/login"); 
+    } else {
+      alert("Register failed: " + result);
+    }
+  } catch (error) {
+    alert("Error: " + error);
+  }
+
+  submitting.value = false;
 }
 </script>
 

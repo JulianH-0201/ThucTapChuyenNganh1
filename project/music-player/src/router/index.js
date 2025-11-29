@@ -10,6 +10,11 @@ import AdminLayout from "@/layouts/AdminLayout.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 import DashboardView from "@/views/admin/DashboardView.vue";
+import AddSongView from "@/views/admin/AddSongView.vue";
+import AddAlbumView from "@/views/admin/AddAlbumView.vue";
+import AlbumsView from "@/views/admin/AlbumsView.vue";
+import ArtistsView from "@/views/admin/ArtistsView.vue";
+import AddArtistView from "@/views/admin/AddArtistView.vue";
 import AlbumDetailView from "../views/AlbumDetailView.vue";
 
 const router = createRouter({
@@ -64,6 +69,41 @@ const router = createRouter({
           path: "songs",
           name: "admin-songs",
           component: DashboardView,
+        },
+        {
+          path: "songs/add",
+          name: "admin-add-song",
+          component: AddSongView,
+        },
+        {
+          path: "albums",
+          name: "admin-albums",
+          component: AlbumsView,
+        },
+        {
+          path: "artists",
+          name: "admin-artists",
+          component: ArtistsView,
+        },
+        {
+          path: "artists/add",
+          name: "admin-add-artist",
+          component: AddArtistView,
+        },
+        {
+          path: "artists/:id/albums",
+          name: "admin-artist-albums",
+          component: AlbumsView,
+        },
+        {
+          path: "albums/add",
+          name: "admin-add-album",
+          component: AddAlbumView,
+        },
+        {
+          path: "users",
+          name: "admin-users",
+          component: () => import("../views/admin/UsersView.vue"),
         },
         { path: "login", name: "admin-login", component: LoginView },
         { path: "register", name: "admin-register", component: RegisterView },

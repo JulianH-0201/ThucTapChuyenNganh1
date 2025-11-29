@@ -2,13 +2,13 @@
 import Navbar from "@/components/Navbar.vue";
 import Footer from "@/components/Footer.vue";
 import { RouterView } from "vue-router";
+import Hero from "../components/Hero.vue";
 </script>
 
 <template>
   <div>
-    <div class="navbar-wrapper">
-      <Navbar />
-    </div>
+    <Navbar />
+    <Hero />
     <main class="auth-main">
       <div class="container">
         <div class="row justify-content-center">
