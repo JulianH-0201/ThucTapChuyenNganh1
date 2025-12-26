@@ -1,9 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const Artist = require("../models/Artist");
+const Artist = require("../models/Artist.model");
+
+const Admin = require("../models/Admin.model");
+const bcrypt = require("bcrypt");
 
 // GET /api/admin/songs - Get all songs from MongoDB
-router.get("/songs", async (req, res) => {
+const getAllSongs = async (req, res) => {
   try {
     const artists = await Artist.find();
     if (!artists || artists.length === 0) {
@@ -20,19 +23,25 @@ router.get("/songs", async (req, res) => {
 
     res.json({
       artist: firstArtist.artistName,
+      artistId: firstArtist._id,
       albumName: firstAlbum.name,
+      albumId: firstAlbum._id,
       albumCover: firstAlbum.albumCover,
       releaseYear: firstAlbum.releaseYear,
-      tracks: firstAlbum.tracks || [],
+      tracks: (firstAlbum.tracks || []).map((t) => ({
+        trackId: t._id,
+        name: t.name,
+        path: t.path,
+      })),
       totalTracks: firstAlbum.tracks ? firstAlbum.tracks.length : 0,
     });
   } catch (err) {
     res.status(500).json({ error: "Error fetching songs: " + err.message });
   }
-});
+};
 
 // POST /api/admin/songs - Add a new song to specified artist's album
-router.post("/songs", async (req, res) => {
+const addNewSong = async (req, res) => {
   try {
     const { name, path, artistId, albumId } = req.body;
 
@@ -64,28 +73,64 @@ router.post("/songs", async (req, res) => {
       return res.status(404).json({ error: "No albums found" });
     }
 
-    // Create new track
-    const newTrack = {
-      id: (album.tracks.length || 0) + 1,
-      name,
-      path,
-    };
+    // Create new track (let Mongoose assign _id)
+    const newTrack = { name, path };
 
     album.tracks.push(newTrack);
     await artist.save();
 
+    const savedTrack = album.tracks[album.tracks.length - 1];
+
     res.json({
       success: true,
       message: "Song added successfully",
-      track: newTrack,
+      track: {
+        trackId: savedTrack._id,
+        name: savedTrack.name,
+        path: savedTrack.path,
+      },
     });
   } catch (err) {
     res.status(500).json({ error: "Error adding song: " + err.message });
   }
-});
+};
+
+//for admin Login
+const checkLogin = (req, res) => {
+  Admin.findOne({ email: req.body.email })
+    .then((admin) => {
+      if (admin) {
+        bcrypt.compare(req.body.password, admin.password, (err, matched) => {
+          if (err)
+            return res.json({
+              success: false,
+              message: "Error comparing passwords",
+              error: err.message,
+            });
+          if (matched) {
+            res.json({
+              success: true,
+              message: "Login successful",
+            });
+          } else {
+            res.json({ success: false, message: "Password incorrect" });
+          }
+        });
+      } else {
+        res.json({ success: false, message: "User not found" });
+      }
+    })
+    .catch((err) => {
+      res.json({
+        success: false,
+        message: "Error finding user",
+        error: err.message,
+      });
+    });
+};
 
 // DELETE /api/admin/songs/:trackId - Delete a song
-router.delete("/songs/:trackId", async (req, res) => {
+const deleteSong = async (req, res) => {
   try {
     const { trackId } = req.params;
     const { artistId, albumId } = req.query;
@@ -117,7 +162,7 @@ router.delete("/songs/:trackId", async (req, res) => {
     }
 
     const trackIndex = album.tracks.findIndex(
-      (t) => t.id === parseInt(trackId)
+      (t) => t._id.toString() === trackId
     );
 
     if (trackIndex === -1) {
@@ -131,40 +176,85 @@ router.delete("/songs/:trackId", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error deleting song: " + err.message });
   }
-});
+};
+
+// PUT /api/admin/songs/:trackId - Update a song
+const updateSong = async (req, res) => {
+  try {
+    const { trackId } = req.params;
+    const { name, path } = req.body;
+    const { artistId, albumId } = req.query;
+
+    let artist;
+    if (artistId) {
+      artist = await Artist.findById(artistId);
+    } else {
+      artist = await Artist.findOne();
+    }
+
+    if (!artist) {
+      return res.status(404).json({ error: "No artists found" });
+    }
+
+    let album;
+    if (albumId) {
+      album = artist.albums.find((a) => a._id.toString() === albumId);
+    } else {
+      album = artist.albums[0];
+    }
+
+    if (!album) {
+      return res.status(404).json({ error: "Album not found" });
+    }
+
+    const track = album.tracks.find((t) => t._id.toString() === trackId);
+    if (!track) {
+      return res.status(404).json({ error: "Track not found" });
+    }
+
+    if (name !== undefined) track.name = name;
+    if (path !== undefined) track.path = path;
+
+    await artist.save();
+
+    res.json({
+      success: true,
+      message: "Song updated successfully",
+      track: { trackId: track._id, name: track.name, path: track.path },
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error updating song: " + err.message });
+  }
+};
 
 // GET /api/admin/albums - Get all albums
-router.get("/albums", async (req, res) => {
+const getAllAlbum = async (req, res) => {
   try {
-    const artists = await Artist.find();
-    const albums = [];
-
-    artists.forEach((artist) => {
-      artist.albums.forEach((album) => {
-        albums.push({
-          _id: album._id,
-          name: album.name,
-          releaseYear: album.releaseYear,
-          albumCover: album.albumCover,
-          price: album.price,
-          artist: artist.artistName,
-          artistId: artist._id,
-          trackCount: album.tracks ? album.tracks.length : 0,
-        });
-      });
-    });
+    // Aggregation tells the DB to flatten the data for you
+    const albums = await Artist.aggregate([
+      { $unwind: "$albums" }, // Break the artist document into one doc per album
+      {
+        $project: {
+          // Choose exactly which fields you want to see
+          _id: "$albums._id",
+          name: "$albums.name",
+          artist: "$artistName",
+          artistId: "$_id",
+          releaseYear: "$albums.releaseYear",
+          trackCount: { $size: { $ifNull: ["$albums.tracks", []] } },
+        },
+      },
+    ]);
 
     res.json(albums);
   } catch (err) {
-    res.status(500).json({ error: "Error fetching albums: " + err.message });
+    res.status(500).json({ error: err.message });
   }
-});
-
+};
 // POST /api/admin/albums - Add new album
-router.post("/albums", async (req, res) => {
+const addNewAlbum = async (req, res) => {
   try {
-    const { name, releaseYear, albumCover, price, artistId } =
-      req.body;
+    const { name, releaseYear, albumCover, price, artistId } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Album name is required" });
@@ -200,10 +290,46 @@ router.post("/albums", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error adding album: " + err.message });
   }
-});
+};
+
+// PUT /api/admin/albums/:albumId - Update album
+const updateAlbum = async (req, res) => {
+  try {
+    const { albumId } = req.params;
+    const { name, releaseYear, albumCover, price } = req.body;
+    const { artistId } = req.query;
+
+    let artist;
+    if (artistId) {
+      artist = await Artist.findById(artistId);
+    } else {
+      artist = await Artist.findOne();
+    }
+
+    if (!artist) {
+      return res.status(404).json({ error: "No artists found" });
+    }
+
+    const album = artist.albums.find((a) => a._id.toString() === albumId);
+    if (!album) {
+      return res.status(404).json({ error: "Album not found" });
+    }
+
+    if (name !== undefined) album.name = name;
+    if (releaseYear !== undefined) album.releaseYear = releaseYear;
+    if (albumCover !== undefined) album.albumCover = albumCover;
+    if (price !== undefined) album.price = price;
+
+    await artist.save();
+
+    res.json({ success: true, message: "Album updated successfully", album });
+  } catch (err) {
+    res.status(500).json({ error: "Error updating album: " + err.message });
+  }
+};
 
 // DELETE /api/admin/albums/:albumId - Delete album
-router.delete("/albums/:albumId", async (req, res) => {
+const deleteAlbum = async (req, res) => {
   try {
     const { albumId } = req.params;
     const { artistId } = req.query;
@@ -234,12 +360,12 @@ router.delete("/albums/:albumId", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error deleting album: " + err.message });
   }
-});
+};
 
 // ===== ARTISTS API =====
 
 // GET - list artists
-router.get("/artists", async (req, res) => {
+const getAllArtist = async (req, res) => {
   try {
     const artists = await Artist.find();
     const list = artists.map((a) => ({
@@ -251,10 +377,10 @@ router.get("/artists", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error fetching artists: " + err.message });
   }
-});
+};
 
 // POST - create an artist
-router.post("/artists", async (req, res) => {
+const addNewArtist = async (req, res) => {
   try {
     const { artistName } = req.body;
     if (!artistName)
@@ -270,10 +396,30 @@ router.post("/artists", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error creating artist: " + err.message });
   }
-});
+};
+
+// PUT - update an artist
+const updateArtist = async (req, res) => {
+  try {
+    const { artistId } = req.params;
+    const { artistName } = req.body;
+
+    const artist = await Artist.findByIdAndUpdate(
+      artistId,
+      { artistName },
+      { new: true }
+    );
+
+    if (!artist) return res.status(404).json({ error: "Artist not found" });
+
+    res.json({ success: true, message: "Artist updated", artist });
+  } catch (err) {
+    res.status(500).json({ error: "Error updating artist: " + err.message });
+  }
+};
 
 // DELETE - remove an artist
-router.delete("/artists/:artistId", async (req, res) => {
+const deleteArtist = async (req, res) => {
   try {
     const { artistId } = req.params;
     const artist = await Artist.findById(artistId);
@@ -283,7 +429,7 @@ router.delete("/artists/:artistId", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error deleting artist: " + err.message });
   }
-});
+};
 
 // GET - artist albums
 router.get("/artists/:artistId/albums", async (req, res) => {
@@ -298,14 +444,18 @@ router.get("/artists/:artistId/albums", async (req, res) => {
 });
 
 // ===== USERS API =====
-const User = require("../models/User");
-router.get("/users", async (req, res) => {
-  try {
-    const users = await User.find().select("_id name email");
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: "Error fetching users: " + err.message });
-  }
-});
-
-module.exports = router;
+module.exports = {
+  getAllAlbum,
+  getAllArtist,
+  getAllSongs,
+  addNewAlbum,
+  addNewArtist,
+  addNewSong,
+  updateAlbum,
+  updateArtist,
+  updateSong,
+  deleteAlbum,
+  deleteArtist,
+  deleteSong,
+  checkLogin,
+};

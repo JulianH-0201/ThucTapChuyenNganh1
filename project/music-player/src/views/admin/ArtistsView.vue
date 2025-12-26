@@ -33,6 +33,26 @@ const handleDelete = async (id) => {
   }
 };
 
+const handleEdit = async (artist) => {
+  const newName = prompt("Artist name:", artist.artistName);
+  if (newName === null) return;
+
+  try {
+    const res = await fetch(
+      `http://localhost:3000/api/admin/artists/${artist._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artistName: newName }),
+      }
+    );
+    if (!res.ok) throw new Error("Lỗi cập nhật");
+    await fetchArtists();
+  } catch (err) {
+    error.value = err.message;
+  }
+};
+
 onMounted(fetchArtists);
 </script>
 
@@ -72,9 +92,12 @@ onMounted(fetchArtists);
               Albums
             </button>
             <button
-              @click="() => handleDelete(a._id)"
-              class="btn btn-sm btn-danger"
+              @click="handleEdit(a)"
+              class="btn btn-sm btn-outline-primary me-2"
             >
+              Edit
+            </button>
+            <button @click="handleDelete(a._id)" class="btn btn-sm btn-danger">
               Delete
             </button>
           </div>

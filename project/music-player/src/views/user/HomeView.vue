@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from "vue";
-import TracksItem from "../components/TracksItem.vue";
+import TracksItem from "@/components/TracksItem.vue";
 
 const tracks = ref([
   {

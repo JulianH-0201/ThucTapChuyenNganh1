@@ -6,6 +6,7 @@ import { storeToRefs } from "pinia";
 import { useMusicStore, URL } from "@/stores/song";
 import { slugify } from "@/utils/slugify";
 import Hero from "@/components/Hero.vue";
+import MusicPlayer from "@/components/MusicPlayer.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -163,7 +164,7 @@ watch(currentTrack, () => {
         <div class="track-title">{{ track.name }}</div>
         <div>{{ currentAlbum.artistName }}</div>
         <div class="duration">
-          {{ isPlaying && currentTrack?.id === track.id ? "▶" : "" }}
+          {{ isPlaying && currentTrack?.id === track.id ? "" : "▶" }}
         </div>
       </div>
 
@@ -184,6 +185,9 @@ watch(currentTrack, () => {
         "
       />
     </div>
+
+    <!-- Modern Music Player -->
+    <!-- <MusicPlayer v-if="currentTrack" /> -->
   </div>
 </template>
 

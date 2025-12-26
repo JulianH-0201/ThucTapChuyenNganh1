@@ -1,47 +1,40 @@
 <script setup>
 import { ref } from "vue";
-import { useRouter, RouterLink } from "vue-router";
+import { useRouter } from "vue-router";
 import { URL } from "../stores/song";
-
+import { storeToRefs } from "pinia";
+const { currentUserName, login } = storeToRefs(userStore);
 const router = useRouter();
-const name = ref("");
 const email = ref("");
 const password = ref("");
-const password2 = ref("");
 const submitting = ref(false);
 
 async function submit(e) {
   e.preventDefault();
-  //check passwords match
-  if (password.value !== password2.value) {
-    alert("Passwords do not match!");
-    return;
-  }
-  
   submitting.value = true;
 
   try {
-    const response = await fetch(`${URL}/register`, {
+    const response = await fetch(`${URL}/admin/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        //add name field
-        name: name.value, 
         email: email.value,
         password: password.value,
       }),
     });
 
-    const result = await response.text();
+    const result = await response.json();
 
-    if (result === "USER SAVED") {
-      alert("Register successful!");
-      //move to login page
-      router.push("/auth/login"); 
+    if (result.success && result.message === "Login successful") {
+      currentUserName.value = result.name;
+      login.value = true;
+      localStorage.setItem("user", result.name);
+      alert("Login successful!");
+      router.push("/");
     } else {
-      alert("Register failed: " + result);
+      alert("Login failed: " + result.message);
     }
   } catch (error) {
     alert("Error: " + error);
@@ -53,15 +46,10 @@ async function submit(e) {
 
 <template>
   <div class="auth-view">
-    <h3 class="text-center mb-3">Register</h3>
-    <p class="text-center text-muted mb-4">Create a new account</p>
+    <h3 class="text-center mb-3">Login</h3>
+    <p class="text-center text-muted mb-4">Sign in to admin account</p>
 
     <form @submit="submit">
-      <div class="mb-3">
-        <label class="form-label">Full name</label>
-        <input v-model="name" type="text" class="form-control" required />
-      </div>
-
       <div class="mb-3">
         <label class="form-label">Email</label>
         <input v-model="email" type="email" class="form-control" required />
@@ -77,14 +65,12 @@ async function submit(e) {
         />
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Confirm password</label>
-        <input
-          v-model="password2"
-          type="password"
-          class="form-control"
-          required
-        />
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="remember" />
+          <label class="form-check-label" for="remember">Remember me</label>
+        </div>
+        <a href="#" class="text-decoration-none">Forgot?</a>
       </div>
 
       <button
@@ -92,15 +78,15 @@ async function submit(e) {
         class="btn btn-primary w-100"
         type="submit"
       >
-        <span v-if="!submitting">Create account</span>
-        <span v-else>Creating...</span>
+        <span v-if="!submitting">Login</span>
+        <span v-else>Signing in...</span>
       </button>
     </form>
 
     <p class="text-center mt-3">
-      Already have an account?
-      <RouterLink to="/auth/login" class="text-decoration-none"
-        >Login</RouterLink
+      Don't have an account?
+      <RouterLink to="/auth/register" class="text-decoration-none"
+        >Register</RouterLink
       >
     </p>
   </div>

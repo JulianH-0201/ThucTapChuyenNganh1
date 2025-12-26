@@ -18,14 +18,13 @@ import Hero from '@/components/Hero.vue';
         </div>
         <div class="col-xl-7 col-md-6">
           <div class="about_info">
-            <h3>Jack Kalib</h3>
+            <h3>Musico</h3>
             <p>
-              Esteem spirit temper too say adieus who direct esteem. It esteems
-              luckily or picture placing drawing. Apartments frequently or
-              motionless on reasonable projecting expression enim ad minim
-              veniam quis nostrud exercitation we have supported programmes to
-              help alleviate human suffering through animal welfare when people
-              might depend.
+              Welcome to Musico, your ultimate destination for music lovers! Our
+              platform is dedicated to bringing you the best in music, from
+              timeless classics to the latest hits. Whether you're an avid
+              listener or a casual fan, Musico offers a seamless and immersive
+              experience to explore, discover, and enjoy your favorite tunes.
             </p>
             <div class="signature">
               <img src="/img/about/signature.png" alt="" />

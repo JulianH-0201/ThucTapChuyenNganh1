@@ -97,19 +97,50 @@ const changeEntriesPerPage = (val) => {
   currentPage.value = 1;
 };
 
-// const handleDelete = async (id, name) => {
-//   if (!confirm(`Xóa album "${name}"?`)) return;
+const handleDelete = async (id, name) => {
+  if (!confirm(`Xóa album "${name}"?`)) return;
 
-//   try {
-//     const res = await fetch(`http://localhost:3000/api/admin/albums/${id}`, {
-//       method: "DELETE",
-//     });
-//     if (!res.ok) throw new Error("Lỗi xóa");
-//     await fetchAlbums();
-//   } catch (err) {
-//     error.value = err.message;
-//   }
-// };
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/albums/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Lỗi xóa");
+    await fetchAlbums();
+  } catch (err) {
+    error.value = err.message;
+  }
+};
+
+const handleEdit = async (album) => {
+  const newName = prompt("Album name:", album.name);
+  if (newName === null) return;
+  const newYear = prompt("Release year:", album.releaseYear || "");
+  if (newYear === null) return;
+  const newPrice = prompt(
+    "Price:",
+    album.price == null ? "0" : String(album.price)
+  );
+  if (newPrice === null) return;
+
+  try {
+    const res = await fetch(
+      `http://localhost:3000/api/admin/albums/${album._id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          releaseYear: newYear,
+          price: parseFloat(newPrice),
+        }),
+      }
+    );
+    if (!res.ok) throw new Error("Lỗi cập nhật");
+    await fetchAlbums();
+  } catch (err) {
+    error.value = err.message;
+  }
+};
 
 // ============ LIFECYCLE ============
 onMounted(() => {
@@ -295,12 +326,16 @@ onMounted(() => {
                 </td>
                 <td class="px-4 py-3">
                   <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" title="Edit">
+                    <button
+                      @click="() => handleEdit(album)"
+                      class="btn btn-sm btn-outline-primary"
+                      title="Edit"
+                    >
                       <i class="fa fa-edit me-1"></i>
                       Edit
                     </button>
                     <button
-                      @click="handleDelete(album._id, album.name)"
+                      @click="() => handleDelete(album._id, album.name)"
                       class="btn btn-sm btn-outline-danger"
                       title="Delete"
                     >

@@ -8,6 +8,8 @@ const isSongsSection = computed(() => route.path === "/admin/songs");
 
 // ============ STATE ============
 const songs = ref([]);
+const artistId = ref(null);
+const albumId = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const sortOrder = ref("asc");
@@ -25,8 +27,11 @@ const fetchSongs = async () => {
     if (!res.ok) throw new Error("Lỗi tải bài hát");
 
     const data = await res.json();
+    artistId.value = data.artistId || null;
+    albumId.value = data.albumId || null;
     songs.value = (data.tracks || []).map((t, i) => ({
-      id: t.id || i + 1,
+      id: i + 1,
+      trackId: t.trackId || t._id || t.id,
       name: t.name,
       path: t.path,
       artist: data.artist || "Unknown",
@@ -104,6 +109,57 @@ const goToPage = (page) => {
 const changeEntriesPerPage = (val) => {
   entriesPerPage.value = parseInt(val);
   currentPage.value = 1;
+};
+
+// ============ ACTIONS ============
+const handleDeleteSong = async (trackId) => {
+  if (!confirm("Delete this song?")) return;
+  try {
+    const q = new URLSearchParams();
+    if (artistId.value) q.set("artistId", artistId.value);
+    if (albumId.value) q.set("albumId", albumId.value);
+    const url = `http://localhost:3000/api/admin/songs/${trackId}${
+      q.toString() ? "?" + q.toString() : ""
+    }`;
+
+    const res = await fetch(url, {
+      method: "DELETE",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    await fetchSongs();
+  } catch (err) {
+    error.value = err.message;
+    console.error(err);
+  }
+};
+
+const handleEdit = async (song) => {
+  const newName = prompt("Song name:", song.name);
+  if (newName === null) return; // cancelled
+  const newPath = prompt("File path:", song.path);
+  if (newPath === null) return;
+
+  try {
+    const q = new URLSearchParams();
+    if (artistId.value) q.set("artistId", artistId.value);
+    if (albumId.value) q.set("albumId", albumId.value);
+    const url = `http://localhost:3000/api/admin/songs/${song.trackId}${
+      q.toString() ? "?" + q.toString() : ""
+    }`;
+
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName, path: newPath }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    await fetchSongs();
+  } catch (err) {
+    error.value = err.message;
+    console.error(err);
+  }
 };
 
 // ============ LIFECYCLE ============
@@ -261,7 +317,7 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="song in paginatedSongs" :key="song.id">
+              <tr v-for="song in paginatedSongs" :key="song.trackId || song.id">
                 <td class="px-4 py-3">{{ song.id }}</td>
                 <td class="px-4 py-3">{{ song.name }}</td>
                 <td class="px-4 py-3">{{ song.artist }}</td>
@@ -270,11 +326,16 @@ onMounted(() => {
                 </td>
                 <td v-if="isSongsSection" class="px-4 py-3">
                   <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" title="Edit">
+                    <button
+                      @click="() => handleEdit(song)"
+                      class="btn btn-sm btn-outline-primary"
+                      title="Edit"
+                    >
                       <i class="fa fa-edit me-1"></i>
                       Edit
                     </button>
                     <button
+                      @click="() => handleDeleteSong(song.id)"
                       class="btn btn-sm btn-outline-danger"
                       title="Delete"
                     >

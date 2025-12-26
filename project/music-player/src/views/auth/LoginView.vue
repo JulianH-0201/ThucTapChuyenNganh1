@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { URL } from "../stores/song";
-import { useUserStore } from "../stores/user";
+import { URL } from "../../stores/song";
+import { useUserStore } from "../../stores/user";
 import { storeToRefs } from "pinia";
 const userStore = useUserStore();
 const { currentUserName, login } = storeToRefs(userStore);
@@ -10,7 +10,8 @@ const router = useRouter();
 const email = ref("");
 const password = ref("");
 const submitting = ref(false);
-
+const errorEmail = ref(null);
+const errorPassword = ref(null);
 async function submit(e) {
   e.preventDefault();
   submitting.value = true;
@@ -44,6 +45,23 @@ async function submit(e) {
 
   submitting.value = false;
 }
+
+function validateEmail() {
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailPattern.test(email.value)) {
+    errorEmail.value = "Please enter a valid email address.";
+  } else {
+    errorEmail.value = null;
+  }
+}
+
+function validatePassword() {
+  if (password.value.length < 6) {
+    errorPassword.value = "Password must be at least 6 characters long.";
+  } else {
+    errorPassword.value = null;
+  }
+}
 </script>
 
 <template>
@@ -54,7 +72,14 @@ async function submit(e) {
     <form @submit="submit">
       <div class="mb-3">
         <label class="form-label">Email</label>
-        <input v-model="email" type="email" class="form-control" required />
+        <input
+          v-model="email"
+          type="email"
+          class="form-control"
+          @blur="validateEmail"
+          required
+        />
+        <p v-if="errorEmail" class="text-danger">{{ errorEmail }}</p>
       </div>
 
       <div class="mb-3">
@@ -63,8 +88,10 @@ async function submit(e) {
           v-model="password"
           type="password"
           class="form-control"
+          @blur="validatePassword"
           required
         />
+        <p v-if="errorPassword" class="text-danger">{{ errorPassword }}</p>
       </div>
 
       <div class="d-flex justify-content-between align-items-center mb-3">

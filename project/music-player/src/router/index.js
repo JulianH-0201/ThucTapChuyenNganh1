@@ -1,21 +1,21 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
+import HomeView from "../views/user/HomeView.vue";
 import UserLayout from "@/layouts/UserLayout.vue";
-import ContactView from "@/views/ContactView.vue";
-import DiscographyView from "@/views/DiscographyView.vue";
-import AboutView from "@/views/AboutView.vue";
-import BlogView from "@/views/BlogView.vue";
+import ContactView from "@/views/user/ContactView.vue";
+import DiscographyView from "@/views/user/DiscographyView.vue";
+import AboutView from "@/views/user/AboutView.vue";
+import BlogView from "@/views/user/BlogView.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
-import LoginView from "@/views/LoginView.vue";
-import RegisterView from "@/views/RegisterView.vue";
+import LoginView from "@/views/auth/LoginView.vue";
+import RegisterView from "@/views/auth/RegisterView.vue";
 import DashboardView from "@/views/admin/DashboardView.vue";
 import AddSongView from "@/views/admin/AddSongView.vue";
 import AddAlbumView from "@/views/admin/AddAlbumView.vue";
 import AlbumsView from "@/views/admin/AlbumsView.vue";
 import ArtistsView from "@/views/admin/ArtistsView.vue";
 import AddArtistView from "@/views/admin/AddArtistView.vue";
-import AlbumDetailView from "../views/AlbumDetailView.vue";
+import AlbumDetailView from "../views/user/AlbumDetailView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
