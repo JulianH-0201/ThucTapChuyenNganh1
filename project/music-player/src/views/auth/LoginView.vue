@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { URL } from "../../stores/song";
 import { useUserStore } from "../../stores/user";
 import { storeToRefs } from "pinia";
+const URL = "http://localhost:3000";
 const userStore = useUserStore();
 const { currentUserName, login } = storeToRefs(userStore);
 const router = useRouter();
@@ -31,9 +31,9 @@ async function submit(e) {
     const result = await response.json();
 
     if (result.success && result.message === "Login successful") {
-      currentUserName.value = result.name;
+      currentUserName.value = result.user.username;
       login.value = true;
-      localStorage.setItem("user", result.name);
+      localStorage.setItem("user", JSON.stringify(result.user));
       alert("Login successful!");
       router.push("/");
     } else {

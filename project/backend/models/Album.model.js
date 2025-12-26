@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const TrackSchema = require('./Track.model');
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-const AlbumSchema = new mongoose.Schema({
+const AlbumSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -16,7 +16,16 @@ const AlbumSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  tracks: [TrackSchema],
+  // Quan hệ: Album thuộc về 1 Artist
+  artist: {
+    type: Schema.Types.ObjectId,
+    ref: "Artist",
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-module.exports = AlbumSchema;
+module.exports = mongoose.model("Album", AlbumSchema);

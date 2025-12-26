@@ -16,6 +16,7 @@ import AlbumsView from "@/views/admin/AlbumsView.vue";
 import ArtistsView from "@/views/admin/ArtistsView.vue";
 import AddArtistView from "@/views/admin/AddArtistView.vue";
 import AlbumDetailView from "../views/user/AlbumDetailView.vue";
+import SongsView from "../views/admin/SongsView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,7 +69,7 @@ const router = createRouter({
         {
           path: "songs",
           name: "admin-songs",
-          component: DashboardView,
+          component: SongsView,
         },
         {
           path: "songs/add",

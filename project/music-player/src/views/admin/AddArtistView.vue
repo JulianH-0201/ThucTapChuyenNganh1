@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const name = ref("");
+const bio = ref("");
 const loading = ref(false);
 const error = ref(null);
 const success = ref(false);
@@ -20,7 +21,10 @@ const handleSubmit = async () => {
     const res = await fetch("http://localhost:3000/api/admin/artists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ artistName: name.value }),
+      body: JSON.stringify({
+        artistName: name.value,
+        artistBio: bio.value,
+      }),
     });
     if (!res.ok) throw new Error("Lỗi tạo nghệ sĩ");
     const data = await res.json();
@@ -53,6 +57,14 @@ const handleSubmit = async () => {
               v-model="name"
               class="form-control"
               placeholder="Artist name"
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Artist Bio</label>
+            <input
+              v-model="bio"
+              class="form-control"
+              placeholder="Artist biography"
             />
           </div>
           <div class="d-flex justify-content-end gap-2">

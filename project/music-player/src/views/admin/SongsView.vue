@@ -1,27 +1,44 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
+const route = useRoute();
 const router = useRouter();
+const isSongsSection = computed(() => route.path === "/admin/songs");
 
 // ============ STATE ============
-const albums = ref([]);
+const songs = ref([]);
+const artistId = ref(null);
+const albumId = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const sortOrder = ref("asc");
-const sortColumn = ref("name");
+const sortColumn = ref("id");
 const searchQuery = ref("");
 const currentPage = ref(1);
 const entriesPerPage = ref(10);
 
 // ============ FETCH DATA ============
-const fetchAlbums = async () => {
+const fetchSongs = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const res = await fetch("http://localhost:3000/api/admin/albums");
-    if (!res.ok) throw new Error("Lỗi tải album");
-    albums.value = await res.json();
+    const res = await fetch("http://localhost:3000/api/admin/tracks");
+    if (!res.ok) throw new Error("Lỗi tải bài hát");
+
+    const data = await res.json();
+    artistId.value = data.artistId || null;
+    albumId.value = data.albumId || null;
+    songs.value = data.map((t, i) => ({
+      id: i + 1,                  // Số thứ tự hiển thị
+      trackId: t._id,             // ID thật của MongoDB (Dùng để Xóa/Sửa)
+      name: t.name,
+      path: t.path,
+      // Lưu ý: API hiện tại chỉ trả về thông tin Album, không có Artist.
+      // Tạm thời hiển thị tên Album vào cột Artist hoặc để trống.
+      album: t.album ? t.album.name : "Unknown Album", 
+      albumId: t.album ? t.album._id : null
+    }));
   } catch (err) {
     error.value = err.message;
     console.error(err);
@@ -39,7 +56,7 @@ const handleSort = (col) => {
     sortOrder.value = "asc";
   }
 
-  filteredAlbums.value.sort((a, b) => {
+  filteredSongs.value.sort((a, b) => {
     const aVal = a[col];
     const bVal = b[col];
 
@@ -53,38 +70,38 @@ const handleSort = (col) => {
 };
 
 // ============ FILTER ============
-const filteredAlbums = computed(() => {
-  if (!searchQuery.value) return albums.value;
+const filteredSongs = computed(() => {
+  if (!searchQuery.value) return songs.value;
 
   const q = searchQuery.value.toLowerCase();
-  return albums.value.filter(
-    (a) =>
-      a.name.toLowerCase().includes(q) ||
-      a.artist.toLowerCase().includes(q) ||
-      a.releaseYear.includes(q)
+  return songs.value.filter(
+    (s) =>
+      s.name.toLowerCase().includes(q) ||
+      s.artist.toLowerCase().includes(q) ||
+      s.path.toLowerCase().includes(q) ||
+      s.id.toString().includes(q)
   );
 });
 
 // ============ PAGINATION ============
-
-const paginatedAlbums = computed(() => {
+const paginatedSongs = computed(() => {
   const start = (currentPage.value - 1) * entriesPerPage.value;
-  return filteredAlbums.value.slice(start, start + entriesPerPage.value);
+  return filteredSongs.value.slice(start, start + entriesPerPage.value);
 });
 
 const totalPages = computed(() => {
-  return Math.ceil(filteredAlbums.value.length / entriesPerPage.value);
+  return Math.ceil(filteredSongs.value.length / entriesPerPage.value);
 });
 
 const startEntry = computed(() => {
-  return filteredAlbums.value.length === 0
+  return filteredSongs.value.length === 0
     ? 0
     : (currentPage.value - 1) * entriesPerPage.value + 1;
 });
 
 const endEntry = computed(() => {
   const end = currentPage.value * entriesPerPage.value;
-  return end > filteredAlbums.value.length ? filteredAlbums.value.length : end;
+  return end > filteredSongs.value.length ? filteredSongs.value.length : end;
 });
 
 // ============ ACTIONS ============
@@ -97,64 +114,74 @@ const changeEntriesPerPage = (val) => {
   currentPage.value = 1;
 };
 
-const handleDelete = async (id, name) => {
-  if (!confirm(`Xóa album "${name}"?`)) return;
-
+// ============ ACTIONS ============
+const handleDeleteSong = async (trackId) => {
+  if (!confirm("Delete this song?")) return;
   try {
-    const res = await fetch(`http://localhost:3000/api/admin/albums/${id}`, {
+    const q = new URLSearchParams();
+    if (artistId.value) q.set("artistId", artistId.value);
+    if (albumId.value) q.set("albumId", albumId.value);
+    const url = `http://localhost:3000/api/admin/tracks/${trackId}${
+      q.toString() ? "?" + q.toString() : ""
+    }`;
+
+    const res = await fetch(url, {
       method: "DELETE",
     });
-    if (!res.ok) throw new Error("Lỗi xóa");
-    await fetchAlbums();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    await fetchSongs();
   } catch (err) {
     error.value = err.message;
+    console.error(err);
   }
 };
 
-const handleEdit = async (album) => {
-  const newName = prompt("Album name:", album.name);
-  if (newName === null) return;
-  const newYear = prompt("Release year:", album.releaseYear || "");
-  if (newYear === null) return;
-  const newPrice = prompt(
-    "Price:",
-    album.price == null ? "0" : String(album.price)
-  );
-  if (newPrice === null) return;
+const handleEdit = async (song) => {
+  const newName = prompt("Song name:", song.name);
+  if (newName === null) return; // cancelled
+  const newPath = prompt("File path:", song.path);
+  if (newPath === null) return;
 
   try {
-    const res = await fetch(
-      `http://localhost:3000/api/admin/albums/${album._id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newName,
-          releaseYear: newYear,
-          price: parseFloat(newPrice),
-        }),
-      }
-    );
-    if (!res.ok) throw new Error("Lỗi cập nhật");
-    await fetchAlbums();
+    const q = new URLSearchParams();
+    if (artistId.value) q.set("artistId", artistId.value);
+    if (albumId.value) q.set("albumId", albumId.value);
+    const url = `http://localhost:3000/api/admin/tracks/${song.trackId}${
+      q.toString() ? "?" + q.toString() : ""
+    }`;
+
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName, path: newPath }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    await fetchSongs();
   } catch (err) {
     error.value = err.message;
+    console.error(err);
   }
 };
 
 // ============ LIFECYCLE ============
 onMounted(() => {
-  fetchAlbums();
+  fetchSongs();
 });
 </script>
 
 <template>
   <div>
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="text-dark">Albums</h2>
-      <button @click="router.push('/admin/albums/add')" class="btn btn-primary">
+      <h2 class="text-dark">All Songs</h2>
+      <button
+        v-if="isSongsSection"
+        @click="router.push('/admin/songs/add')"
+        class="btn btn-primary"
+      >
         <i class="fa fa-plus me-2"></i>
-        Add Album
+        Add Song
       </button>
     </div>
 
@@ -213,11 +240,30 @@ onMounted(() => {
               <tr>
                 <th
                   scope="col"
+                  @click="handleSort('id')"
+                  style="cursor: pointer; user-select: none"
+                  class="px-4 py-3"
+                >
+                  ID
+                  <i
+                    :class="[
+                      'fa ms-1',
+                      sortColumn === 'id'
+                        ? sortOrder === 'asc'
+                          ? 'fa-arrow-up'
+                          : 'fa-arrow-down'
+                        : 'fa-arrows-alt-v',
+                    ]"
+                    style="opacity: 0.5; font-size: 0.75rem"
+                  ></i>
+                </th>
+                <th
+                  scope="col"
                   @click="handleSort('name')"
                   style="cursor: pointer; user-select: none"
                   class="px-4 py-3"
                 >
-                  ALBUM NAME
+                  SONG NAME
                   <i
                     :class="[
                       'fa ms-1',
@@ -236,7 +282,7 @@ onMounted(() => {
                   style="cursor: pointer; user-select: none"
                   class="px-4 py-3"
                 >
-                  ARTIST
+                  ALBUM
                   <i
                     :class="[
                       'fa ms-1',
@@ -251,15 +297,15 @@ onMounted(() => {
                 </th>
                 <th
                   scope="col"
-                  @click="handleSort('releaseYear')"
+                  @click="handleSort('path')"
                   style="cursor: pointer; user-select: none"
                   class="px-4 py-3"
                 >
-                  YEAR
+                  FILE PATH
                   <i
                     :class="[
                       'fa ms-1',
-                      sortColumn === 'releaseYear'
+                      sortColumn === 'path'
                         ? sortOrder === 'asc'
                           ? 'fa-arrow-up'
                           : 'fa-arrow-down'
@@ -268,66 +314,23 @@ onMounted(() => {
                     style="opacity: 0.5; font-size: 0.75rem"
                   ></i>
                 </th>
-                <th
-                  scope="col"
-                  @click="handleSort('price')"
-                  style="cursor: pointer; user-select: none"
-                  class="px-4 py-3"
-                >
-                  PRICE
-                  <i
-                    :class="[
-                      'fa ms-1',
-                      sortColumn === 'price'
-                        ? sortOrder === 'asc'
-                          ? 'fa-arrow-up'
-                          : 'fa-arrow-down'
-                        : 'fa-arrows-alt-v',
-                    ]"
-                    style="opacity: 0.5; font-size: 0.75rem"
-                  ></i>
+                <th v-if="isSongsSection" scope="col" class="px-4 py-3">
+                  ACTIONS
                 </th>
-                <th
-                  scope="col"
-                  @click="handleSort('trackCount')"
-                  style="cursor: pointer; user-select: none"
-                  class="px-4 py-3"
-                >
-                  TRACKS
-                  <i
-                    :class="[
-                      'fa ms-1',
-                      sortColumn === 'trackCount'
-                        ? sortOrder === 'asc'
-                          ? 'fa-arrow-up'
-                          : 'fa-arrow-down'
-                        : 'fa-arrows-alt-v',
-                    ]"
-                    style="opacity: 0.5; font-size: 0.75rem"
-                  ></i>
-                </th>
-                <th scope="col" class="px-4 py-3">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="album in paginatedAlbums" :key="album._id">
+              <tr v-for="song in paginatedSongs" :key="song.trackId || song.id">
+                <td class="px-4 py-3">{{ song.id }}</td>
+                <td class="px-4 py-3">{{ song.name }}</td>
+                <td class="px-4 py-3">{{ song.album }}</td>
                 <td class="px-4 py-3">
-                  <div class="d-flex align-items-center gap-2">
-                    <span>{{ album.name }}</span>
-                  </div>
+                  <code class="text-muted">{{ song.path }}</code>
                 </td>
-                <td class="px-4 py-3">{{ album.artist.artistName }}</td>
-                <td class="px-4 py-3">{{ album.releaseYear }}</td>
-                <td class="px-4 py-3">${{ album.price }}</td>
-                <td class="px-4 py-3">
-                  <span class="badge bg-info text-dark">{{
-                    album.trackCount
-                  }}</span>
-                </td>
-                <td class="px-4 py-3">
+                <td v-if="isSongsSection" class="px-4 py-3">
                   <div class="d-flex gap-2">
                     <button
-                      @click="() => handleEdit(album)"
+                      @click="() => handleEdit(song)"
                       class="btn btn-sm btn-outline-primary"
                       title="Edit"
                     >
@@ -335,7 +338,7 @@ onMounted(() => {
                       Edit
                     </button>
                     <button
-                      @click="() => handleDelete(album._id, album.name)"
+                      @click="() => handleDeleteSong(song.trackId)"
                       class="btn btn-sm btn-outline-danger"
                       title="Delete"
                     >
@@ -345,9 +348,12 @@ onMounted(() => {
                   </div>
                 </td>
               </tr>
-              <tr v-if="paginatedAlbums.length === 0">
-                <td colspan="6" class="text-center py-4 text-muted">
-                  No albums found
+              <tr v-if="paginatedSongs.length === 0">
+                <td
+                  :colspan="isSongsSection ? 5 : 4"
+                  class="text-center py-4 text-muted"
+                >
+                  No songs found
                 </td>
               </tr>
             </tbody>
@@ -361,7 +367,7 @@ onMounted(() => {
       >
         <div class="text-muted small">
           Showing {{ startEntry }} to {{ endEntry }} of
-          {{ filteredAlbums.length }} entries
+          {{ filteredSongs.length }} entries
         </div>
         <nav>
           <ul class="pagination pagination-sm mb-0">
@@ -420,9 +426,27 @@ tbody tr:hover {
   background-color: #f8f9fa;
 }
 
-.badge {
-  font-weight: 600;
-  font-size: 0.8rem;
+code {
+  font-size: 0.875rem;
+  background-color: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.page-link {
+  color: #6c757d;
+  border-color: #dee2e6;
+}
+
+.page-item.active .page-link {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.page-link:hover {
+  color: #495057;
+  background-color: #e9ecef;
+  border-color: #dee2e6;
 }
 
 .form-select-sm {
@@ -444,21 +468,5 @@ tbody tr:hover {
   background-color: #dc3545;
   border-color: #dc3545;
   color: white;
-}
-
-.page-link {
-  color: #6c757d;
-  border-color: #dee2e6;
-}
-
-.page-item.active .page-link {
-  background-color: #6c757d;
-  border-color: #6c757d;
-}
-
-.page-link:hover {
-  color: #495057;
-  background-color: #e9ecef;
-  border-color: #dee2e6;
 }
 </style>

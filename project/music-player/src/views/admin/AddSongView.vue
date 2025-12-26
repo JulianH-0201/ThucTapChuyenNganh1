@@ -34,7 +34,7 @@ const handleSubmit = async () => {
     if (!payload.artistId) delete payload.artistId;
     if (!payload.albumId) delete payload.albumId;
 
-    const response = await fetch("http://localhost:3000/api/admin/songs", {
+    const response = await fetch("http://localhost:3000/api/admin/tracks", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -82,7 +82,7 @@ const fetchAlbumsForArtist = async (artistId) => {
   if (!artistId) return;
   try {
     const res = await fetch(
-      `http://localhost:3000/api/admin/artists/${artistId}/albums`
+      `http://localhost:3000/api/admin/albums/artists/${artistId}/albums`
     );
     if (res.ok) albums.value = await res.json();
   } catch (err) {

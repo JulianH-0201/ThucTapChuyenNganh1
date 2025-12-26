@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
-import { URL } from "../../stores/song";
 
+const URL = "http://localhost:3000";
 const router = useRouter();
 const name = ref("");
 const email = ref("");
@@ -28,7 +28,7 @@ async function submit(e) {
       },
       body: JSON.stringify({
         //add name field
-        name: name.value,
+        username: name.value,
         email: email.value,
         password: password.value,
       }),

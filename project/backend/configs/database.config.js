@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const connectDB = async () => {
   try {
     // Kết nối đến MongoDB
-    await mongoose.connect("mongodb://127.0.0.1/node");
+    await mongoose.connect("mongodb://127.0.0.1/music-player");
     console.log("MongoDB connected successfully.");
   } catch (err) {
     console.error("Error connecting to MongoDB:", err);
