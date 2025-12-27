@@ -46,11 +46,11 @@ async function submit(e) {
       // Trường hợp 404: Email không tồn tại
       if (response.status === 404) {
         errorEmail.value = msg;
-      } 
+      }
       // Trường hợp 401: Sai mật khẩu
       else if (response.status === 401) {
         errorPassword.value = msg;
-      } 
+      }
       // Trường hợp 400: Lỗi Joi Validation (Thiếu trường, sai định dạng...)
       else if (response.status === 400) {
         // Kiểm tra xem nội dung lỗi nhắc đến Email hay Password
@@ -61,25 +61,25 @@ async function submit(e) {
         } else {
           generalError.value = msg; // Lỗi lạ khác
         }
-      } 
+      }
       // Các lỗi 500 hoặc khác
       else {
         generalError.value = msg;
       }
-      
+
       submitting.value = false;
       return;
     }
 
     // 3. Đăng nhập thành công
     if (result.success) {
-      if (userStore.setCurrentUser) {
-        userStore.setCurrentUser(result.user);
-      } else {
-        currentUserName.value = result.user.username;
-        login.value = true;
-      }
+      // TOKEN-ONLY FLOW: store the token and set user in store for immediate UI display
+      // We intentionally DO NOT write username to localStorage; the token is the single source of truth.
+      // If you need a server-verified user restore instead of client JWT decode, call `/me` on startup.
       localStorage.setItem("token", result.token);
+      const username =
+        result.user?.username || result.user?.name || result.user?.email || "";
+      if (username) userStore.setUser(username);
       router.push("/");
     }
   } catch (error) {
@@ -96,7 +96,10 @@ async function submit(e) {
     <h3 class="text-center mb-3">Login</h3>
     <p class="text-center text-muted mb-4">Sign in to access your account</p>
 
-    <div v-if="generalError" class="alert alert-danger text-center p-2 mb-3 small">
+    <div
+      v-if="generalError"
+      class="alert alert-danger text-center p-2 mb-3 small"
+    >
       <i class="fa fa-exclamation-triangle me-1"></i> {{ generalError }}
     </div>
 
@@ -146,14 +149,17 @@ async function submit(e) {
       >
         <span v-if="!submitting">Login</span>
         <span v-else>
-          <span class="spinner-border spinner-border-sm me-1"></span> Signing in...
+          <span class="spinner-border spinner-border-sm me-1"></span> Signing
+          in...
         </span>
       </button>
     </form>
 
     <p class="text-center mt-3">
       Don't have an account?
-      <RouterLink to="/auth/register" class="text-decoration-none">Register</RouterLink>
+      <RouterLink to="/auth/register" class="text-decoration-none"
+        >Register</RouterLink
+      >
     </p>
   </div>
 </template>

@@ -9,7 +9,6 @@ import AuthLayout from "@/layouts/AuthLayout.vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import LoginView from "@/views/auth/LoginView.vue";
 import RegisterView from "@/views/auth/RegisterView.vue";
-import DashboardView from "@/views/admin/DashboardView.vue";
 import AddSongView from "@/views/admin/Song/AddSongView.vue";
 import EditSongView from "@/views/admin/Song/EditSongView.vue";
 import AddAlbumView from "@/views/admin/Album/AddAlbumView.vue";
@@ -22,7 +21,7 @@ import AlbumDetailView from "../views/user/AlbumDetailView.vue";
 import SongsView from "../views/admin/Song/SongsView.vue";
 import UserView from "../views/admin/User/UsersView.vue";
 import ChangeRoleUserView from "../views/admin/User/ChangeRoleUserView.vue";
-import AdminLoginView from "../views/admin/AdminLoginView.vue";
+import AdminLogin from "../views/admin/AdminLogin.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -70,7 +69,7 @@ const router = createRouter({
         {
           path: "",
           name: "admin-login",
-          component: AdminLoginView,
+          component: AdminLogin,
         },
         {
           path: "songs",
