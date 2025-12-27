@@ -9,27 +9,25 @@ import { slugify } from "@/utils/slugify";
 
 const router = useRouter();
 const musicStore = useMusicStore();
-const { artists, loading, error } = storeToRefs(musicStore);
+const { albums, loading, error } = storeToRefs(musicStore);
 
 onMounted(() => {
-  if (!artists.value.length && !loading.value) {
-    musicStore.fetchArtists();
+  if (!albums.value.length && !loading.value) {
+    musicStore.fetchAlbums();
   }
 });
 
-const albums = computed(() =>
-  artists.value.flatMap((artist, artistIdx) =>
-    (artist.albums || []).map((album, albumIdx) => ({
-      ...album,
-      artistName: artist.artistName,
-      key: `${artistIdx}-${albumIdx}`,
-      cover: album.albumCover?.startsWith("http")
-        ? album.albumCover
-        : `${URL}${album.albumCover}`,
-      artistSlug: slugify(artist.artistName || `artist-${artistIdx}`),
-      albumSlug: slugify(album.name || `album-${albumIdx}`),
-    }))
-  )
+const albumsList = computed(() =>
+  albums.value.map((album, idx) => ({
+    ...album,
+    artistName: album.artist?.artistName || "—",
+    key: album._id || idx,
+    cover: album.albumCover?.startsWith("http")
+      ? album.albumCover
+      : `${URL}${album.albumCover}`,
+    artistSlug: slugify(album.artist?.artistName || `artist-${idx}`),
+    albumSlug: slugify(album.name || `album-${idx}`),
+  }))
 );
 
 const statusMessage = computed(() => {
@@ -66,7 +64,7 @@ const openAlbum = (album) => {
       </div>
       <template v-else>
         <div
-          v-for="album in albums"
+          v-for="album in albumsList"
           :key="album.key"
           class="row align-items-center justify-content-center mb-20"
         >
@@ -143,7 +141,7 @@ const openAlbum = (album) => {
 }
 
 .album-field:focus-visible {
-  outline: 2px solid #fba100;
+  outline: 2px solid #2563eb;
   border-radius: 12px;
   padding: 10px;
 }

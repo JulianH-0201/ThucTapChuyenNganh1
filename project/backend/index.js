@@ -26,7 +26,7 @@ connectDB();
 app.use("/", serverRoutes);
 
 // --- STATIC FILES ---
-app.use(express.static(path.join(__dirname, "..", "public")));
+app.use(express.static(path.join(__dirname, "public")));
 
 // --- START SERVER ---
 app.listen(port, () => console.log(`Server is running at port ${port}`));

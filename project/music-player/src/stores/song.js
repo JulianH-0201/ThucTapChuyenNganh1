@@ -7,6 +7,7 @@ export const URL = "http://localhost:3000";
 export const useMusicStore = defineStore("music", {
   state: () => ({
     artists: [],
+    albums: [],
     currentTrack: null,
     currentArtist: null,
     currentAlbum: null,
@@ -56,6 +57,27 @@ export const useMusicStore = defineStore("music", {
       }
     },
 
+    async fetchAlbums() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await fetch(`${URL}/api/albums`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        this.albums = data;
+      } catch (err) {
+        this.error = err.message;
+        console.error("Failed to fetch albums:", err);
+      } finally {
+        this.loading = false;
+      }
+    },
+
     setCurrentTrack(track, artist, album) {
       this.currentTrack = track;
       this.currentArtist = artist;
@@ -72,6 +94,31 @@ export const useMusicStore = defineStore("music", {
 
     togglePlayPause() {
       this.isPlaying = !this.isPlaying;
+    },
+
+    playNext() {
+      const tracks = (this.currentAlbum && this.currentAlbum.tracks) || [];
+      if (!this.currentTrack) return;
+      const curId = this.currentTrack._id || this.currentTrack.id;
+      const idx = tracks.findIndex((t) => (t._id || t.id) == curId);
+      if (idx !== -1 && idx < tracks.length - 1) {
+        const next = tracks[idx + 1];
+        this.setCurrentTrack(next, this.currentArtist, this.currentAlbum);
+      } else {
+        // End of playlist - stop playback
+        this.isPlaying = false;
+      }
+    },
+
+    playPrev() {
+      const tracks = (this.currentAlbum && this.currentAlbum.tracks) || [];
+      if (!this.currentTrack) return;
+      const curId = this.currentTrack._id || this.currentTrack.id;
+      const idx = tracks.findIndex((t) => (t._id || t.id) == curId);
+      if (idx > 0) {
+        const prev = tracks[idx - 1];
+        this.setCurrentTrack(prev, this.currentArtist, this.currentAlbum);
+      }
     },
   },
 });

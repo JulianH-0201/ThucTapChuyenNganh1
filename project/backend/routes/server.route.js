@@ -9,21 +9,21 @@ const adminRoute = require("./admin.route");
 const artistsAdminRoute = require("./artistsAdmin.route");
 const albumsRoute = require("./albums.route");
 const tracksRoute = require("./tracks.route");
-
+const { verifyToken, isAdmin } = require("../middlewares/auth.middleware");
 // --- GẮN CÁC ROUTE CON ---
 
 // Route cho User (Login/Register)
 // Nếu bạn gắn ở root "/", đường dẫn sẽ là: /register, /login
 // Nếu muốn gom nhóm, bạn có thể để router.use("/api/auth", userRoute);
-router.use("/", userRoute); 
+router.use("/", userRoute);
 
 // Route Artist Client
-router.use("/api/artists", artistsRoute);
+router.use("/api", artistsRoute);
 
 // Route Admin Dashboard
-router.use("/api/admin", adminRoute);
-router.use("/api/admin/artists", artistsAdminRoute);
-router.use("/api/admin/albums", albumsRoute);
-router.use("/api/admin/tracks", tracksRoute);
+router.use("/api/admin", [verifyToken, isAdmin], adminRoute);
+router.use("/api/admin/artists", [verifyToken, isAdmin], artistsAdminRoute);
+router.use("/api/admin/albums", [verifyToken, isAdmin], albumsRoute);
+router.use("/api/admin/tracks", [verifyToken, isAdmin], tracksRoute);
 
 module.exports = router;

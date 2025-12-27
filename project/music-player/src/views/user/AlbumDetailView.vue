@@ -11,11 +11,12 @@ import MusicPlayer from "@/components/MusicPlayer.vue";
 const route = useRoute();
 const router = useRouter();
 const musicStore = useMusicStore();
-const { artists, loading, error, currentTrack, isPlaying } =
+const { artists, albums, loading, error, currentTrack, isPlaying } =
   storeToRefs(musicStore);
-const audioElement = ref(null);
+// audio is handled by the global MusicPlayer component
 
-const flattenAlbums = computed(() =>
+// Build flattened list from artists (legacy) and albums (preferred)
+const flattenAlbumsFromArtists = computed(() =>
   artists.value.flatMap((artist, artistIdx) =>
     (artist.albums || []).map((album, albumIdx) => {
       const cover = album.albumCover?.startsWith("http")
@@ -32,27 +33,66 @@ const flattenAlbums = computed(() =>
   )
 );
 
-const currentAlbum = computed(() =>
-  flattenAlbums.value.find(
+const flattenAlbumsFromAlbums = computed(() =>
+  albums.value.map((album, idx) => {
+    const cover = album.albumCover?.startsWith("http")
+      ? album.albumCover
+      : `${URL}${album.albumCover}`;
+    return {
+      ...album,
+      artistName: album.artist?.artistName || "—",
+      artistSlug: slugify(album.artist?.artistName || `artist-${idx}`),
+      albumSlug: slugify(album.name || `album-${idx}`),
+      cover,
+    };
+  })
+);
+
+const currentAlbum = computed(() => {
+  // Prefer albums endpoint
+  const foundFromAlbums = flattenAlbumsFromAlbums.value.find(
     (album) =>
       album.artistSlug === route.params.artistSlug &&
       album.albumSlug === route.params.albumSlug
-  )
-);
+  );
+  if (foundFromAlbums) return foundFromAlbums;
+
+  // Fallback to artists -> albums
+  return flattenAlbumsFromArtists.value.find(
+    (album) =>
+      album.artistSlug === route.params.artistSlug &&
+      album.albumSlug === route.params.albumSlug
+  );
+});
 
 const tracks = computed(() => currentAlbum.value?.tracks || []);
 
+// Helper to check if a track is the currently selected one
+const isTrackActive = (track) => {
+  const cur = currentTrack.value;
+  if (!cur) return false;
+  const curId = cur._id || cur.id;
+  const tId = track._id || track.id;
+  if (!curId || !tId) return false;
+  return String(curId) === String(tId);
+};
+
 const totalDuration = computed(() => {
-  const totalMinutes = tracks.value.length * 3; // Rough estimate until durations exist
+  const totalMinutes = tracks.value.length * 3; // simple estimate
   return `${totalMinutes} min`;
 });
 
 const coverImage = computed(() => currentAlbum.value?.cover);
 
 onMounted(async () => {
-  if (!artists.value.length && !loading.value) {
-    await musicStore.fetchArtists();
-  }
+  // Ensure we have albums and artists available
+  const promises = [];
+  if (!albums.value.length && !loading.value)
+    promises.push(musicStore.fetchAlbums());
+  if (!artists.value.length && !loading.value)
+    promises.push(musicStore.fetchArtists());
+  if (promises.length) await Promise.all(promises);
+
   if (!loading.value && !currentAlbum.value) {
     router.replace({ name: "discography" });
   }
@@ -73,39 +113,14 @@ watch(
 
 const goBack = () => router.push({ name: "discography" });
 
-const playTrack = async (track) => {
+const playTrack = (track) => {
   musicStore.setCurrentTrack(
     track,
     currentAlbum.value?.artistName,
     currentAlbum.value
   );
-  await nextTick();
-  if (audioElement.value) {
-    audioElement.value.play().catch((err) => console.error("Play error:", err));
-  }
+  // Playback is handled by the global MusicPlayer
 };
-
-watch(isPlaying, (playing) => {
-  if (!audioElement.value) return;
-  if (playing) {
-    audioElement.value.play().catch((err) => console.error("Play error:", err));
-  } else {
-    audioElement.value.pause();
-  }
-});
-
-watch(currentTrack, () => {
-  if (audioElement.value && currentTrack.value) {
-    audioElement.value.src = `${URL}${currentTrack.value.path}`;
-    if (isPlaying.value) {
-      nextTick(() => {
-        audioElement.value
-          ?.play()
-          .catch((err) => console.error("Play error:", err));
-      });
-    }
-  }
-});
 </script>
 
 <template>
@@ -149,41 +164,27 @@ watch(currentTrack, () => {
         <div>Title</div>
         <div>Artist</div>
         <div class="duration">
-          <i class="ti-time" aria-hidden="true"></i>
+          <!-- <i class="ti-time" aria-hidden="true"></i> -->
+          play
         </div>
       </div>
 
       <div
         v-for="(track, index) in tracks"
-        :key="track.id || index"
+        :key="track._id || track.id || index"
         class="track-row"
-        :class="{ active: currentTrack?.id === track.id }"
+        :class="{ active: isTrackActive(track) }"
         @click="playTrack(track)"
       >
         <div class="track-number">{{ index + 1 }}</div>
         <div class="track-title">{{ track.name }}</div>
         <div>{{ currentAlbum.artistName }}</div>
         <div class="duration">
-          {{ isPlaying && currentTrack?.id === track.id ? "" : "▶" }}
+          {{ isPlaying && isTrackActive(track) ? "" : "▶" }}
         </div>
       </div>
 
-      <!-- Hidden audio element -->
-      <audio
-        ref="audioElement"
-        @play="musicStore.isPlaying = true"
-        @pause="musicStore.isPlaying = false"
-        @ended="
-          () => {
-            const currentIndex = tracks.findIndex(
-              (t) => t.id === currentTrack.id
-            );
-            if (currentIndex < tracks.length - 1) {
-              playTrack(tracks[currentIndex + 1]);
-            }
-          }
-        "
-      />
+      <!-- Audio playback is handled by the global MusicPlayer component -->
     </div>
 
     <!-- Modern Music Player -->

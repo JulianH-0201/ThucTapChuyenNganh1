@@ -1,6 +1,7 @@
 <script setup>
 import Navbar from "@/components/Navbar.vue";
 import Footer from "@/components/Footer.vue";
+import MusicPlayer from "@/components/MusicPlayer.vue";
 import { RouterView } from "vue-router";
 </script>
 
@@ -10,6 +11,7 @@ import { RouterView } from "vue-router";
     <main>
       <RouterView />
     </main>
+    <MusicPlayer />
     <Footer />
   </div>
 </template>

@@ -6,6 +6,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar.vue";
 const router = useRouter();
 
 const handleLogout = () => {
+  localStorage.removeItem("token");
   router.push("/auth/login");
 };
 </script>
@@ -18,11 +19,11 @@ const handleLogout = () => {
     <!-- Main Content -->
     <div
       class="flex-grow-1 d-flex flex-column"
-      style="margin-left: 250px; transition: margin-left 0.3s;"
+      style="margin-left: 250px; transition: margin-left 0.3s"
     >
       <AdminHeader @logout="handleLogout" />
 
-      <main class="flex-grow-1 bg-white p-4" style="overflow-y: auto;">
+      <main class="flex-grow-1 bg-white p-4" style="overflow-y: auto">
         <RouterView />
       </main>
     </div>

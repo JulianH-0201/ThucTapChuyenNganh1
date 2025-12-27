@@ -10,13 +10,19 @@ import AdminLayout from "@/layouts/AdminLayout.vue";
 import LoginView from "@/views/auth/LoginView.vue";
 import RegisterView from "@/views/auth/RegisterView.vue";
 import DashboardView from "@/views/admin/DashboardView.vue";
-import AddSongView from "@/views/admin/AddSongView.vue";
-import AddAlbumView from "@/views/admin/AddAlbumView.vue";
-import AlbumsView from "@/views/admin/AlbumsView.vue";
-import ArtistsView from "@/views/admin/ArtistsView.vue";
-import AddArtistView from "@/views/admin/AddArtistView.vue";
+import AddSongView from "@/views/admin/Song/AddSongView.vue";
+import EditSongView from "@/views/admin/Song/EditSongView.vue";
+import AddAlbumView from "@/views/admin/Album/AddAlbumView.vue";
+import EditAlbumView from "@/views/admin/Album/EditAlbumView.vue";
+import AlbumsView from "@/views/admin/Album/AlbumsView.vue";
+import ArtistsView from "@/views/admin/Artist/ArtistsView.vue";
+import EditArtistView from "@/views/admin/Artist/EditArtistView.vue";
+import AddArtistView from "@/views/admin/Artist/AddArtistView.vue";
 import AlbumDetailView from "../views/user/AlbumDetailView.vue";
-import SongsView from "../views/admin/SongsView.vue";
+import SongsView from "../views/admin/Song/SongsView.vue";
+import UserView from "../views/admin/User/UsersView.vue";
+import ChangeRoleUserView from "../views/admin/User/ChangeRoleUserView.vue";
+import AdminLoginView from "../views/admin/AdminLoginView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -63,8 +69,8 @@ const router = createRouter({
       children: [
         {
           path: "",
-          name: "admin-dashboard",
-          component: DashboardView,
+          name: "admin-login",
+          component: AdminLoginView,
         },
         {
           path: "songs",
@@ -75,6 +81,11 @@ const router = createRouter({
           path: "songs/add",
           name: "admin-add-song",
           component: AddSongView,
+        },
+        {
+          path: "songs/:id/edit",
+          name: "admin-edit-song",
+          component: EditSongView,
         },
         {
           path: "albums",
@@ -102,9 +113,24 @@ const router = createRouter({
           component: AddAlbumView,
         },
         {
+          path: "albums/:id/edit",
+          name: "admin-edit-album",
+          component: EditAlbumView,
+        },
+        {
+          path: "artists/:id/edit",
+          name: "admin-edit-artist",
+          component: EditArtistView,
+        },
+        {
           path: "users",
           name: "admin-users",
-          component: () => import("../views/admin/UsersView.vue"),
+          component: UserView,
+        },
+        {
+          path: "users/:id/change-role",
+          name: "admin-users-changeRoleUser",
+          component: ChangeRoleUserView,
         },
         { path: "login", name: "admin-login", component: LoginView },
         { path: "register", name: "admin-register", component: RegisterView },

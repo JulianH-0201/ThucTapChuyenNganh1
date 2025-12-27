@@ -53,16 +53,10 @@ const handleBlur = (field) => {
 </script>
 
 <template>
-    <Hero />
+  <Hero />
 
   <section class="contact-section section_padding">
     <div class="container">
-      <div class="d-none d-sm-block mb-5 pb-4">
-        <div id="map" style="height: 480px">
-          <!-- Consider using a Vue map component like vue3-google-map -->
-        </div>
-      </div>
-
       <div class="row">
         <div class="col-12">
           <h2 class="contact-title">Get in Touch</h2>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
+import { URL } from "@/stores/song";
 
 const router = useRouter();
 
@@ -14,17 +15,39 @@ const searchQuery = ref("");
 const currentPage = ref(1);
 const entriesPerPage = ref(10);
 
+//token for headers
+const getAuthHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: localStorage.getItem("token") || "",
+});
+
 // ============ FETCH DATA ============
 const fetchAlbums = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const res = await fetch("http://localhost:3000/api/admin/albums");
+    // 1. Lấy token từ localStorage
+    //const token = localStorage.getItem("token");
+
+    // 2. Thực hiện fetch với Header Authorization
+    const res = await fetch("http://localhost:3000/api/admin/albums", {
+      method: "GET",
+      headers: getAuthHeaders(),
+    });
+
+    // 3. Xử lý các trường hợp lỗi phân quyền (401, 403)
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+        "Phiên đăng nhập hết hạn hoặc bạn không có quyền truy cập"
+      );
+    }
+
     if (!res.ok) throw new Error("Lỗi tải album");
+
     albums.value = await res.json();
   } catch (err) {
     error.value = err.message;
-    console.error(err);
+    console.error("Fetch Error:", err);
   } finally {
     loading.value = false;
   }
@@ -101,41 +124,12 @@ const handleDelete = async (id, name) => {
   if (!confirm(`Xóa album "${name}"?`)) return;
 
   try {
+    //const token = localStorage.getItem("token");
     const res = await fetch(`http://localhost:3000/api/admin/albums/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error("Lỗi xóa");
-    await fetchAlbums();
-  } catch (err) {
-    error.value = err.message;
-  }
-};
-
-const handleEdit = async (album) => {
-  const newName = prompt("Album name:", album.name);
-  if (newName === null) return;
-  const newYear = prompt("Release year:", album.releaseYear || "");
-  if (newYear === null) return;
-  const newPrice = prompt(
-    "Price:",
-    album.price == null ? "0" : String(album.price)
-  );
-  if (newPrice === null) return;
-
-  try {
-    const res = await fetch(
-      `http://localhost:3000/api/admin/albums/${album._id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newName,
-          releaseYear: newYear,
-          price: parseFloat(newPrice),
-        }),
-      }
-    );
-    if (!res.ok) throw new Error("Lỗi cập nhật");
     await fetchAlbums();
   } catch (err) {
     error.value = err.message;
@@ -213,6 +207,13 @@ onMounted(() => {
               <tr>
                 <th
                   scope="col"
+                  style="cursor: pointer; user-select: none"
+                  class="px-4 py-3"
+                >
+                  Album Cover
+                </th>
+                <th
+                  scope="col"
                   @click="handleSort('name')"
                   style="cursor: pointer; user-select: none"
                   class="px-4 py-3"
@@ -230,6 +231,7 @@ onMounted(() => {
                     style="opacity: 0.5; font-size: 0.75rem"
                   ></i>
                 </th>
+
                 <th
                   scope="col"
                   @click="handleSort('artist')"
@@ -311,6 +313,30 @@ onMounted(() => {
             </thead>
             <tbody>
               <tr v-for="album in paginatedAlbums" :key="album._id">
+                <td
+                  class="px-4 py-3 text-center align-middle"
+                  style="width: 90px"
+                >
+                  <img
+                    :src="
+                      album.albumCover
+                        ? album.albumCover.startsWith('http')
+                          ? album.albumCover
+                          : URL + album.albumCover
+                        : 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22></svg>'
+                    "
+                    alt="Album Cover"
+                    class="img-thumbnail"
+                    style="
+                      width: 64px;
+                      height: 64px;
+                      object-fit: cover;
+                      border-radius: 6px;
+                      display: block;
+                      margin: 0 auto;
+                    "
+                  />
+                </td>
                 <td class="px-4 py-3">
                   <div class="d-flex align-items-center gap-2">
                     <span>{{ album.name }}</span>
@@ -327,7 +353,7 @@ onMounted(() => {
                 <td class="px-4 py-3">
                   <div class="d-flex gap-2">
                     <button
-                      @click="() => handleEdit(album)"
+                      @click="router.push(`/admin/albums/${album._id}/edit`)"
                       class="btn btn-sm btn-outline-primary"
                       title="Edit"
                     >

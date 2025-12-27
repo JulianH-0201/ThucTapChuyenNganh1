@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, nextTick } from "vue";
+import { computed, ref, nextTick, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useMusicStore, URL } from "@/stores/song";
 
@@ -47,10 +47,86 @@ const seek = (e) => {
   }
 };
 
+const prevTrack = () => {
+  musicStore.playPrev();
+  // ensure player will start if a previous track exists
+  musicStore.isPlaying = true;
+};
+
+const nextTrack = () => {
+  musicStore.playNext();
+  musicStore.isPlaying = true;
+};
+
+// Keep the audio element in sync with the store
+watch(currentTrack, async () => {
+  await nextTick();
+  if (audioRef.value && musicStore.isPlaying) {
+    audioRef.value.play().catch((err) => console.error("Play error:", err));
+  }
+});
+
+watch(isPlaying, (playing) => {
+  if (!audioRef.value) return;
+  if (playing) {
+    audioRef.value.play().catch((err) => console.error("Play error:", err));
+  } else {
+    audioRef.value.pause();
+  }
+});
+
+// Volume handling (0.0 - 1.0) and mute
+const volume = ref(0.8);
+const isMuted = ref(false);
+const volumePct = computed({
+  get: () => Math.round(volume.value * 100),
+  set: (v) => {
+    const val = Number(v);
+    volume.value = Math.max(0, Math.min(1, val / 100));
+    isMuted.value = volume.value === 0;
+  },
+});
+
+const onVolumeChange = (e) => {
+  volumePct.value = e.target.value;
+};
+
+const increaseVolume = () => {
+  volume.value = Math.min(1, +(volume.value + 0.05).toFixed(2));
+  if (volume.value > 0) isMuted.value = false;
+};
+
+const decreaseVolume = () => {
+  volume.value = Math.max(0, +(volume.value - 0.05).toFixed(2));
+  if (volume.value === 0) isMuted.value = true;
+};
+
+const toggleMute = () => {
+  isMuted.value = !isMuted.value;
+};
+
+watch(volume, (v) => {
+  if (audioRef.value) audioRef.value.volume = v;
+  if (v === 0) isMuted.value = true;
+});
+
+watch(isMuted, (m) => {
+  if (audioRef.value) audioRef.value.muted = !!m;
+});
+
+watch(audioRef, (el) => {
+  if (el) {
+    el.volume = volume.value;
+    el.muted = isMuted.value;
+  }
+});
+
 defineExpose({
   audioRef,
   currentTime,
   duration,
+  volume,
+  isMuted,
 });
 </script>
 
@@ -71,7 +147,7 @@ defineExpose({
           />
         </div>
         <div class="player-info">
-          <h4 class="track-name">{{ currentTrack.name }}</h4>
+          <h4 class="track-name text-dark">{{ currentTrack.name }}</h4>
           <p class="artist-name">
             {{ currentAlbum?.artistName || "Unknown Artist" }}
           </p>
@@ -83,7 +159,7 @@ defineExpose({
       <div class="player-center">
         <!-- Controls -->
         <div class="player-controls">
-          <button class="control-btn" title="Previous">
+          <button class="control-btn" title="Previous" @click="prevTrack">
             <i class="fa fa-step-backward"></i>
           </button>
           <button
@@ -93,7 +169,7 @@ defineExpose({
           >
             <i :class="isPlaying ? 'fa fa-pause' : 'fa fa-play'"></i>
           </button>
-          <button class="control-btn" title="Next">
+          <button class="control-btn" title="Next" @click="nextTrack">
             <i class="fa fa-step-forward"></i>
           </button>
         </div>
@@ -114,38 +190,85 @@ defineExpose({
 
       <!-- Volume & Extra -->
       <div class="player-right">
-        <button class="control-btn volume-btn" title="Mute">
-          <i class="fa fa-volume-up"></i>
-        </button>
+        <div class="volume-controls">
+          <button
+            class="control-btn"
+            title="Decrease volume"
+            @click="decreaseVolume"
+          >
+            <i class="fa fa-minus"></i>
+          </button>
+
+          <input
+            type="range"
+            min="0"
+            max="100"
+            class="volume-range"
+            :value="volumePct"
+            @input="onVolumeChange"
+            aria-label="Volume"
+          />
+
+          <button
+            class="control-btn"
+            title="Increase volume"
+            @click="increaseVolume"
+          >
+            <i class="fa fa-plus"></i>
+          </button>
+
+          <button
+            class="control-btn volume-btn"
+            :title="isMuted ? 'Unmute' : 'Mute'"
+            @click="toggleMute"
+          >
+            <i
+              :class="
+                isMuted
+                  ? 'fa fa-volume-mute'
+                  : volumePct > 0
+                  ? 'fa fa-volume-up'
+                  : 'fa fa-volume-off'
+              "
+            ></i>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Hidden Audio Element -->
     <audio
       ref="audioRef"
-      :src="currentTrack ? `${URL}${currentTrack.path}` : ''"
+      :src="
+        currentTrack
+          ? currentTrack.path?.startsWith('http')
+            ? currentTrack.path
+            : `${URL}${currentTrack.path}`
+          : ''
+      "
       @timeupdate="updateTime"
       @loadedmetadata="updateDuration"
       @play="musicStore.isPlaying = true"
       @pause="musicStore.isPlaying = false"
+      @ended="musicStore.playNext"
     />
   </div>
 </template>
 
 <style scoped>
 .music-player {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border-top: 3px solid #fba100;
+  background: linear-gradient(135deg, #ffffff 0%, #f3f8ff 100%);
+  border-top: 3px solid #2563eb;
   padding: 20px 10vw;
   position: sticky;
   bottom: 0;
   z-index: 100;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .player-wrapper {
   display: grid;
-  grid-template-columns: 1fr 2fr 150px;
+  grid-template-columns: 1fr 2fr 220px; /* give more room for volume controls on right */
   gap: 24px;
   align-items: center;
   max-width: 1400px;
@@ -161,12 +284,12 @@ defineExpose({
 }
 
 .player-cover {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
+  width: 96px;
+  height: 96px;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
 }
 
 .cover-img {
@@ -193,7 +316,7 @@ defineExpose({
 .artist-name {
   margin: 2px 0 0;
   font-size: 13px;
-  color: #fba100;
+  color: #2563eb;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -234,14 +357,14 @@ defineExpose({
 }
 
 .control-btn:hover {
-  color: #fba100;
+  color: #2563eb;
   transform: scale(1.1);
 }
 
 .play-btn {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #fba100, #ff9500);
+  background: linear-gradient(135deg, #2563eb, #2f7ffb);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -251,7 +374,7 @@ defineExpose({
 }
 
 .play-btn:hover {
-  background: linear-gradient(135deg, #ffb300, #ffb300);
+  background: linear-gradient(135deg, #2f7ffb, #3b8dff);
   transform: scale(1.05);
 }
 
@@ -283,7 +406,7 @@ defineExpose({
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #fba100, #ff9500);
+  background: linear-gradient(90deg, #2563eb, #2f7ffb);
   border-radius: 3px;
   transition: width 0.1s linear;
 }
@@ -294,9 +417,9 @@ defineExpose({
   transform: translate(-50%, -50%);
   width: 14px;
   height: 14px;
-  background: #fba100;
+  background: #2563eb;
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(251, 161, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -315,6 +438,47 @@ defineExpose({
 .volume-btn {
   font-size: 16px;
   color: #999;
+}
+
+/* Volume controls */
+.volume-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume-range {
+  width: 120px;
+  height: 6px;
+  background: #eef6ff;
+  border-radius: 999px;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+.volume-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.18);
+  cursor: pointer;
+}
+
+.volume-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .volume-range {
+    width: 90px;
+  }
 }
 
 /* Responsive */

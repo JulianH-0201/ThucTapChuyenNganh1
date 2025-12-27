@@ -21,8 +21,24 @@ const success = ref(false);
 // fetch artists for selection
 const fetchArtists = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/admin/artists");
-    if (res.ok) artists.value = await res.json();
+    const token = localStorage.getItem("token"); // Lấy token
+
+    const res = await fetch("http://localhost:3000/api/admin/artists", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token, // Gửi token lên server
+      },
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      console.error("Phiên đăng nhập hết hạn hoặc không có quyền.");
+      return;
+    }
+
+    if (res.ok) {
+      artists.value = await res.json();
+    }
   } catch (err) {
     console.error("Failed to load artists", err);
   }
@@ -39,6 +55,7 @@ const handleSubmit = async () => {
   success.value = false;
 
   try {
+    const token = localStorage.getItem("token");
     const payload = { ...formData.value };
     // if no artist selected, backend will use first artist
     if (!payload.artistId) delete payload.artistId;
@@ -47,6 +64,7 @@ const handleSubmit = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: token,
       },
       body: JSON.stringify(payload),
     });

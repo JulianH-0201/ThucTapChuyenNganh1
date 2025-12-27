@@ -4,7 +4,7 @@ import { useRoute, RouterLink } from "vue-router";
 const route = useRoute();
 
 const menuItems = [
-  { name: "Dashboard", path: "/admin", icon: "fa-home" },
+  { name: "Login", path: "/admin", icon: "fa-home" },
   { name: "Albums", path: "/admin/albums", icon: "fa-compact-disc" },
   { name: "Artists", path: "/admin/artists", icon: "fa-user" },
   { name: "Songs", path: "/admin/songs", icon: "fa-music" },

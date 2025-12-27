@@ -38,6 +38,7 @@ const handleSubmit = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: localStorage.getItem("token"),
       },
       body: JSON.stringify(payload),
     });
@@ -70,7 +71,12 @@ const handleCancel = () => {
 
 const fetchArtists = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/admin/artists");
+    const res = await fetch("http://localhost:3000/api/admin/artists", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("token"),
+      },
+    });
     if (res.ok) artists.value = await res.json();
   } catch (err) {
     console.error("Failed to load artists", err);
@@ -82,7 +88,13 @@ const fetchAlbumsForArtist = async (artistId) => {
   if (!artistId) return;
   try {
     const res = await fetch(
-      `http://localhost:3000/api/admin/albums/artists/${artistId}/albums`
+      `http://localhost:3000/api/admin/albums/artists/${artistId}/albums`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("token"),
+        },
+      }
     );
     if (res.ok) albums.value = await res.json();
   } catch (err) {

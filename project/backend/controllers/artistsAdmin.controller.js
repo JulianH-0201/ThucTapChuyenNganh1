@@ -32,7 +32,7 @@ const createArtist = async (req, res) => {
     if (!artistName)
       return res.status(400).json({ error: "artistName is required" });
 
-    const newArtist = new Artist({ artistName, artistBio ,albums: [] });
+    const newArtist = new Artist({ artistName, artistBio, albums: [] });
     await newArtist.save();
 
     res.json({
@@ -49,13 +49,16 @@ const createArtist = async (req, res) => {
 const updateArtist = async (req, res) => {
   try {
     const { artistId } = req.params;
-    const { artistName } = req.body;
+    const { artistName, artistBio } = req.body;
 
-    const artist = await Artist.findByIdAndUpdate(
-      artistId,
-      { artistName },
-      { new: true }
-    );
+    // Build update object only with provided fields
+    const update = {};
+    if (artistName !== undefined) update.artistName = artistName;
+    if (artistBio !== undefined) update.artistBio = artistBio;
+
+    const artist = await Artist.findByIdAndUpdate(artistId, update, {
+      new: true,
+    });
 
     if (!artist) return res.status(404).json({ error: "Artist not found" });
 

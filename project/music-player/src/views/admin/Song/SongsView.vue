@@ -23,21 +23,27 @@ const fetchSongs = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const res = await fetch("http://localhost:3000/api/admin/tracks");
+    const res = await fetch("http://localhost:3000/api/admin/tracks", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("token"),
+      },
+    });
     if (!res.ok) throw new Error("Lỗi tải bài hát");
 
     const data = await res.json();
     artistId.value = data.artistId || null;
     albumId.value = data.albumId || null;
     songs.value = data.map((t, i) => ({
-      id: i + 1,                  // Số thứ tự hiển thị
-      trackId: t._id,             // ID thật của MongoDB (Dùng để Xóa/Sửa)
+      id: i + 1, // Số thứ tự hiển thị
+      trackId: t._id, // ID thật của MongoDB (Dùng để Xóa/Sửa)
       name: t.name,
       path: t.path,
       // Lưu ý: API hiện tại chỉ trả về thông tin Album, không có Artist.
       // Tạm thời hiển thị tên Album vào cột Artist hoặc để trống.
-      album: t.album ? t.album.name : "Unknown Album", 
-      albumId: t.album ? t.album._id : null
+      album: t.album ? t.album.name : "Unknown Album",
+      albumId: t.album ? t.album._id : null,
     }));
   } catch (err) {
     error.value = err.message;
@@ -127,34 +133,10 @@ const handleDeleteSong = async (trackId) => {
 
     const res = await fetch(url, {
       method: "DELETE",
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    await fetchSongs();
-  } catch (err) {
-    error.value = err.message;
-    console.error(err);
-  }
-};
-
-const handleEdit = async (song) => {
-  const newName = prompt("Song name:", song.name);
-  if (newName === null) return; // cancelled
-  const newPath = prompt("File path:", song.path);
-  if (newPath === null) return;
-
-  try {
-    const q = new URLSearchParams();
-    if (artistId.value) q.set("artistId", artistId.value);
-    if (albumId.value) q.set("albumId", albumId.value);
-    const url = `http://localhost:3000/api/admin/tracks/${song.trackId}${
-      q.toString() ? "?" + q.toString() : ""
-    }`;
-
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName, path: newPath }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("token"),
+      },
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -330,7 +312,7 @@ onMounted(() => {
                 <td v-if="isSongsSection" class="px-4 py-3">
                   <div class="d-flex gap-2">
                     <button
-                      @click="() => handleEdit(song)"
+                      @click="router.push(`/admin/songs/${song.trackId}/edit`)"
                       class="btn btn-sm btn-outline-primary"
                       title="Edit"
                     >
