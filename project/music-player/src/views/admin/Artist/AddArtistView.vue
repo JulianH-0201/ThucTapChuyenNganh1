@@ -20,7 +20,10 @@ const handleSubmit = async () => {
   try {
     const res = await fetch("http://localhost:3000/api/admin/artists", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: localStorage.getItem("token"),
+      },
       body: JSON.stringify({
         artistName: name.value,
         artistBio: bio.value,
