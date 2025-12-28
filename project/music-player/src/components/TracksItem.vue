@@ -32,9 +32,9 @@ const props = defineProps({
       </div>
     </div>
   </div>
-  <div class="col-xl-3 col-md-3">
+  <!-- <div class="col-xl-3 col-md-3">
     <div class="music_btn">
       <a href="#" class="boxed-btn">buy album</a>
     </div>
-  </div>
+  </div> -->
 </template>

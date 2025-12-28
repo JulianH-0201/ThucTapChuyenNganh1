@@ -25,7 +25,7 @@ const fetchArtists = async () => {
         Authorization: localStorage.getItem("token"),
       },
     });
-    if (!res.ok) throw new Error("Lỗi tải danh sách nghệ sĩ");
+    if (!res.ok) throw new Error("Phiên đăng nhập hết hạn hoặc bạn không có quyền truy cập");
     artists.value = await res.json();
   } catch (err) {
     console.error(err);
@@ -75,7 +75,7 @@ const handleDelete = async (id) => {
   if (!confirm("Bạn có chắc muốn xóa nghệ sĩ này và toàn bộ Album liên quan?"))
     return;
   try {
-    const res = await fetch(`${API_URL}/${id}`, { 
+    const res = await fetch(`${API_URL}/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -128,7 +128,10 @@ onMounted(fetchArtists);
       </div>
     </div>
 
-    <div v-if="error" class="alert alert-danger">{{ error }}</div>
+    <div v-if="error" class="alert alert-danger">
+      <i class="fa fa-exclamation-circle me-2"></i>
+      {{ error }}
+    </div>
 
     <div v-if="!loading && !error" class="card">
       <div

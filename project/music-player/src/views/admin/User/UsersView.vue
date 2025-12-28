@@ -19,7 +19,9 @@ const fetchUsers = async () => {
 
     // 2. Kiểm tra nếu không có token thì báo lỗi ngay lập tức
     if (!token) {
-      throw new Error("Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
+      throw new Error(
+        "Phiên đăng nhập hết hạn hoặc bạn không có quyền truy cập"
+      );
     }
 
     const res = await fetch("http://localhost:3000/api/admin/users", {
@@ -101,7 +103,10 @@ onMounted(fetchUsers);
       </div>
     </div>
 
-    <div v-if="error" class="alert alert-danger">{{ error }}</div>
+    <div v-if="error" class="alert alert-danger">
+      <i class="fa fa-exclamation-circle me-2"></i>
+      {{ error }}
+    </div>
 
     <div v-if="!loading && !error" class="card">
       <div
@@ -165,12 +170,12 @@ onMounted(fetchUsers);
                     >
                       <i class="fa fa-user-shield me-1"></i>Change Role
                     </button>
-                    <button
+                    <!-- <button
                       class="btn btn-sm btn-outline-danger"
                       title="Delete"
                     >
                       <i class="fa fa-trash me-1"></i>Delete
-                    </button>
+                    </button> -->
                   </div>
                 </td>
               </tr>

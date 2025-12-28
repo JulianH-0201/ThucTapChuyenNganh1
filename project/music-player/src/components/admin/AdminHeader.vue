@@ -37,7 +37,6 @@ onMounted(() => {
         class="btn btn-link text-white p-0"
         style="text-decoration: none; font-size: 1.2rem"
       >
-        <i class="fa fa-arrow-left"></i>
       </button>
       <span class="text-muted small">localhost:3000/admin</span>
     </div>

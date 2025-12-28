@@ -47,7 +47,7 @@ const logout = () => {
                           >Discography</RouterLink
                         >
                       </li>
-                      <li>
+                      <!-- <li>
                         <RouterLink to="#" class="text-decoration-none"
                           >blog <i class="ti-angle-down"></i
                         ></RouterLink>
@@ -65,7 +65,7 @@ const logout = () => {
                             </RouterLink>
                           </li>
                         </ul>
-                      </li>
+                      </li> -->
                       <li>
                         <RouterLink to="/contact" class="text-decoration-none"
                           >Contact</RouterLink

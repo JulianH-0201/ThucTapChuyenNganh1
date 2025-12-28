@@ -5,7 +5,7 @@ const route = useRoute();
 
 const menuItems = [
   { name: "Login", path: "/admin", icon: "fa-home" },
-  { name: "Albums", path: "/admin/albums", icon: "fa-compact-disc" },
+  { name: "Albums", path: "/admin/albums", icon: "fa-music" },
   { name: "Artists", path: "/admin/artists", icon: "fa-user" },
   { name: "Songs", path: "/admin/songs", icon: "fa-music" },
   { name: "Users", path: "/admin/users", icon: "fa-users" },
@@ -54,24 +54,7 @@ const isActive = (item) => {
         </li>
       </ul>
     </nav>
-    <div
-      class="px-3 pb-3 d-flex gap-2"
-      style="position: absolute; bottom: 0; width: 100%"
-    >
-      <button
-        class="btn btn-sm btn-outline-light"
-        title="Toggle Sidebar"
-        style="flex: 1"
-      >
-        <i class="fa fa-arrow-left"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-light" title="Settings">
-        <i class="fa fa-cog"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-light" title="Delete">
-        <i class="fa fa-trash"></i>
-      </button>
-    </div>
+
   </aside>
 </template>
 

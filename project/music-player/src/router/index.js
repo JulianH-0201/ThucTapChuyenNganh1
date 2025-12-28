@@ -21,7 +21,8 @@ import AlbumDetailView from "../views/user/AlbumDetailView.vue";
 import SongsView from "../views/admin/Song/SongsView.vue";
 import UserView from "../views/admin/User/UsersView.vue";
 import ChangeRoleUserView from "../views/admin/User/ChangeRoleUserView.vue";
-import AdminLogin from "../views/admin/AdminLogin.vue";
+import AdminLogin from "../views/admin/AdminLoginView.vue";
+import AdminRegister from "../views/admin/AdminRegisterView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -131,8 +132,8 @@ const router = createRouter({
           name: "admin-users-changeRoleUser",
           component: ChangeRoleUserView,
         },
-        { path: "login", name: "admin-login", component: LoginView },
-        { path: "register", name: "admin-register", component: RegisterView },
+        { path: "login", name: "admin-user-login", component: LoginView },
+        { path: "register", name: "admin-register", component: AdminRegister },
       ],
     },
     {

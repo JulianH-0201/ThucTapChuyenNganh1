@@ -29,7 +29,7 @@ router.post("/register", async (req, res, next) => {
       // --- THÊM PHẦN NÀY ---
       confirmPassword: Joi.string()
         .required()
-        .valid(Joi.ref('password')) // Bắt buộc phải giống trường 'password'
+        .valid(Joi.ref("password")) // Bắt buộc phải giống trường 'password'
         .messages({
           "any.only": "Passwords do not match", // Thông báo lỗi khi không khớp
           "any.required": "Confirm password is required",
@@ -54,7 +54,7 @@ router.post("/register", async (req, res, next) => {
 
     // 3. Logic xử lý đăng ký
     // Lưu ý: Chỉ lấy username, email, password để lưu vào DB (bỏ qua confirmPassword)
-    const { username, email, password } = req.body;
+    const { username, email, password, role } = req.body;
 
     const user = await User.findOne({ email: email });
     if (user) {
@@ -70,6 +70,7 @@ router.post("/register", async (req, res, next) => {
       email: email,
       password: hash,
       username: username,
+      role: role,
     });
 
     await newUser.save();
@@ -81,6 +82,65 @@ router.post("/register", async (req, res, next) => {
     return res
       .status(500)
       .json({ success: false, message: "Server error during registration." });
+  }
+});
+
+// POST /admin/register (creates ADMIN without admin code)
+router.post("/admin/register", async (req, res, next) => {
+  try {
+    const schema = Joi.object({
+      username: Joi.string().required(),
+      email: Joi.string().email().required(),
+      password: Joi.string().min(6).required(),
+      confirmPassword: Joi.string().required().valid(Joi.ref("password")),
+    });
+
+    const { error } = schema.validate(req.body, { abortEarly: false });
+    if (error) {
+      const errorMessages = error.details.map((err) => ({
+        field: err.context.key,
+        message: err.message,
+      }));
+
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Validation failed",
+          errors: errorMessages,
+        });
+    }
+
+    const { username, email, password } = req.body;
+
+    const user = await User.findOne({ email: email });
+    if (user)
+      return res
+        .status(409)
+        .json({ success: false, message: "Email is already registered!" });
+
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+
+    const newUser = new User({
+      email: email,
+      password: hash,
+      username: username,
+      role: "ADMIN",
+    });
+    await newUser.save();
+
+    return res
+      .status(201)
+      .json({ success: true, message: "Successfully registered as ADMIN!" });
+  } catch (err) {
+    console.error("Admin Registration Error:", err);
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Server error during admin registration.",
+      });
   }
 });
 

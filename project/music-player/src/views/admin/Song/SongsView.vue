@@ -30,7 +30,7 @@ const fetchSongs = async () => {
         Authorization: localStorage.getItem("token"),
       },
     });
-    if (!res.ok) throw new Error("Lỗi tải bài hát");
+    if (!res.ok) throw new Error("Phiên đăng nhập hết hạn hoặc bạn không có quyền truy cập");
 
     const data = await res.json();
     artistId.value = data.artistId || null;

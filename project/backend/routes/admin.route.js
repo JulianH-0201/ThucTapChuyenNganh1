@@ -15,7 +15,6 @@ router.put(
 // GET /api/admin/dashboard - Lấy thống kê (nếu có)
 router.get(
   "/dashboard",
-  [verifyToken, isAdmin],
   adminController.getDashboardStats
 );
 

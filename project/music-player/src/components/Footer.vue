@@ -35,27 +35,27 @@ import { RouterLink } from "vue-router";
               <div class="socail_links">
                 <ul>
                   <li>
-                    <a href="#">
+                    <a href="https://www.facebook.com/">
                       <i class="fa fa-facebook"></i>
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="https://www.google.com/">
                       <i class="fa fa-google-plus"></i>
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="https://www.twitter.com/">
                       <i class="fa fa-twitter"></i>
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="https://www.youtube.com/">
                       <i class="fa fa-youtube-play"></i>
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="htpps://www.instagram.com/">
                       <i class="fa fa-instagram"></i>
                     </a>
                   </li>
@@ -84,8 +84,7 @@ import { RouterLink } from "vue-router";
               <ul>
                 <li><RouterLink to="/">home</RouterLink></li>
                 <li><RouterLink to="/about">about</RouterLink></li>
-                <li><RouterLink to="/tracks">tracks</RouterLink></li>
-                <li><RouterLink to="/albums">blog</RouterLink></li>
+                <li><RouterLink to="/discography">discography</RouterLink></li>
                 <li><RouterLink to="/contact">contact</RouterLink></li>
               </ul>
             </div>

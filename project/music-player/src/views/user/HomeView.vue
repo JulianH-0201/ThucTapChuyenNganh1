@@ -86,14 +86,14 @@ const tracks = ref([
         </div>
         <div class="col-xl-7 col-md-6">
           <div class="about_info">
-            <h3>Jack Kalib</h3>
+            <h3>Julian</h3>
             <p>
-              Esteem spirit temper too say adieus who direct esteem. It esteems
-              luckily or picture placing drawing. Apartments frequently or
-              motionless on reasonable projecting expression enim ad minim
-              veniam quis nostrud exercitation we have supported programmes to
-              help alleviate human suffering through animal welfare when people
-              might depend.
+              Enjoying music is not just about listening to sounds; it's about
+              immersing yourself in a world of emotions, stories, and rhythms
+              that resonate with your soul. Whether you're seeking solace in a
+              melancholic melody or energizing beats to uplift your spirit,
+              music has the power to transform moments and create lasting
+              memories.
             </p>
             <div class="signature">
               <img src="/img/about/signature.png" alt="" />

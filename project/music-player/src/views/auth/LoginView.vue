@@ -59,7 +59,7 @@ async function submit(e) {
         } else if (msg.toLowerCase().includes("password")) {
           errorPassword.value = msg;
         } else {
-          generalError.value = msg; // Lỗi lạ khác
+          generalError.value = msg; // Lỗi khác
         }
       }
       // Các lỗi 500 hoặc khác
@@ -74,8 +74,6 @@ async function submit(e) {
     // 3. Đăng nhập thành công
     if (result.success) {
       // TOKEN-ONLY FLOW: store the token and set user in store for immediate UI display
-      // We intentionally DO NOT write username to localStorage; the token is the single source of truth.
-      // If you need a server-verified user restore instead of client JWT decode, call `/me` on startup.
       localStorage.setItem("token", result.token);
       const username =
         result.user?.username || result.user?.name || result.user?.email || "";

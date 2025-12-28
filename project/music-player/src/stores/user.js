@@ -3,19 +3,11 @@ import { defineStore } from "pinia";
 export const useUserStore = defineStore("user", {
   state: () => ({
     currentUserName: null,
+    currentUserRole: null,
     login: false,
   }),
 
   actions: {
-    /**
-     * IMPORTANT: Token-only initialization
-     * - We rely on `localStorage.token` (JWT) to extract the username on startup.
-     * - We DO NOT persist a separate `user` key in localStorage anymore to avoid
-     *   duplication and drift between token and stored username.
-     * - If the token is not a JWT or doesn't include username/name/email claim,
-     *   the user will not be restored automatically. For robust verification,
-     *   call a server `/me` endpoint instead.
-     */
     // Initialize user from token only (no local 'user' cached value)
     initializeUser() {
       // Try extracting user info from saved JWT token (quick client-side decode)
@@ -30,9 +22,11 @@ export const useUserStore = defineStore("user", {
           payload += "=".repeat((4 - (payload.length % 4)) % 4);
           const decoded = JSON.parse(atob(payload));
           const name = decoded.username || decoded.name || decoded.email;
+          const role = decoded.role || null;
           if (name) {
             this.currentUserName = name;
             this.login = true;
+            if (role) this.currentUserRole = role;
           }
         }
       } catch (err) {
@@ -46,27 +40,24 @@ export const useUserStore = defineStore("user", {
         this.login = true;
       }
     },
-
-    /**
-     * Logout helper
-     * - Clears the store and removes the auth token only.
-     * - We intentionally do NOT remove a separate `user` key because we no longer store it.
-     */
     userLogout() {
       this.login = false;
       this.currentUserName = null;
+      this.currentUserRole = null;
       // Only token is persisted now
       localStorage.removeItem("token");
     },
-
-    /**
-     * Set current user in store
-     * - NOTE: This no longer writes the username to localStorage; token is the source of truth.
-     * - Call this after storing the `token` on successful login.
-     */
+    // set curent user in store
     setUser(userName) {
       this.currentUserName = userName;
       this.login = true;
+    },
+
+    /**
+     * Set current user's role in store
+     */
+    setRole(roleName) {
+      this.currentUserRole = roleName;
     },
   },
 });
