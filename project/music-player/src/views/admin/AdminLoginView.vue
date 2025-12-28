@@ -75,14 +75,14 @@ async function submit(e) {
     if (result.success) {
       // Lưu token
       localStorage.setItem("token", result.token);
-      
+
       const username =
         result.user?.username || result.user?.name || result.user?.email || "";
       if (username) userStore.setUser(username);
 
       // Điều hướng dành riêng cho Admin
       // Có thể thêm logic kiểm tra result.user.role === 'ADMIN' tại đây nếu cần chặt chẽ hơn
-      router.push("/admin/songs");
+      router.push("/admin/");
     }
   } catch (err) {
     generalError.value = "Không thể kết nối đến máy chủ.";

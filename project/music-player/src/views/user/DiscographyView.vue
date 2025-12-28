@@ -56,10 +56,7 @@ const openAlbum = (album) => {
 
 <template>
   <Hero />
-  <div class="section_title text-center mt-5">
-    <h3>Albums List</h3>
-  </div>
-  <section class="music_area music_gallery inc_padding discography-list">
+  <section class="music_area music_gallery inc_padding discography-list mt-0">
     <div class="container">
       <div v-if="statusMessage" :class="['state-message', statusMessage.type]">
         {{ statusMessage.text }}
