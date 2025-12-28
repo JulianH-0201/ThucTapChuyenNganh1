@@ -13,7 +13,7 @@ const email = ref("");
 const password = ref("");
 const submitting = ref(false);
 
-// Tách riêng biến lỗi cho từng trường (Đã apply từ LoginView)
+// Tách riêng biến lỗi cho từng trường
 const errorEmail = ref(null);
 const errorPassword = ref(null);
 const generalError = ref(null);
@@ -39,35 +39,51 @@ async function submit(e) {
 
     const result = await response.json();
 
-    // 2. Xử lý các trường hợp lỗi dựa trên Status Code (Apply logic từ LoginView)
+    // 2. Xử lý các trường hợp lỗi dựa trên Status Code (Logic từ LoginView)
     if (!response.ok) {
-      if (response.status === 400) {
-        // Lỗi dữ liệu đầu vào (ví dụ: email không đúng định dạng, thiếu trường...)
-        if (result.errors) {
-          errorEmail.value = result.errors.email;
-          errorPassword.value = result.errors.password;
-        } else {
-          generalError.value =
-            result.message || "Thông tin đăng nhập không hợp lệ.";
-        }
-      } else if (response.status === 401) {
-        // Sai email hoặc mật khẩu
-        generalError.value = "Email hoặc mật khẩu không chính xác.";
-      } else {
-        // Các lỗi server khác
-        generalError.value = "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
+      const msg = result.message || "Something went wrong";
+
+      // Trường hợp 404: Email không tồn tại
+      if (response.status === 404) {
+        errorEmail.value = msg;
       }
+      // Trường hợp 401: Sai mật khẩu
+      else if (response.status === 401) {
+        errorPassword.value = msg;
+      }
+      // Trường hợp 400: Lỗi Joi Validation (Thiếu trường, sai định dạng...)
+      else if (response.status === 400) {
+        // Kiểm tra xem nội dung lỗi nhắc đến Email hay Password
+        if (msg.toLowerCase().includes("email")) {
+          errorEmail.value = msg;
+        } else if (msg.toLowerCase().includes("password")) {
+          errorPassword.value = msg;
+        } else {
+          generalError.value = msg; // Lỗi khác
+        }
+      }
+      // Các lỗi 500 hoặc khác
+      else {
+        generalError.value = msg;
+      }
+
+      submitting.value = false;
       return;
     }
 
     // 3. Đăng nhập thành công
-    // Lưu token (đã có tiền tố "Bearer <token>" từ server)
-    localStorage.setItem("token", result.token);
-    const username =
-      result.user?.username || result.user?.name || result.user?.email || "";
-    if (username) userStore.setUser(username);
-    // Chuyển hướng về trang quản trị (sử dụng route tồn tại)
-    router.push("/admin/songs");
+    if (result.success) {
+      // Lưu token
+      localStorage.setItem("token", result.token);
+      
+      const username =
+        result.user?.username || result.user?.name || result.user?.email || "";
+      if (username) userStore.setUser(username);
+
+      // Điều hướng dành riêng cho Admin
+      // Có thể thêm logic kiểm tra result.user.role === 'ADMIN' tại đây nếu cần chặt chẽ hơn
+      router.push("/admin/songs");
+    }
   } catch (err) {
     generalError.value = "Không thể kết nối đến máy chủ.";
     console.error("Login Error:", err);
@@ -77,13 +93,11 @@ async function submit(e) {
 }
 
 function handleLogout() {
-  // Clear store and token, then show login form
   try {
     userStore.userLogout();
     email.value = "";
     password.value = "";
     generalError.value = null;
-    // stay on the same page (admin login) to allow login again
     router.push("/admin");
   } catch (err) {
     console.error("Logout Error:", err);
@@ -95,8 +109,11 @@ function handleLogout() {
   <div class="auth-view container mt-5" style="max-width: 400px">
     <h3 class="text-center mb-4">Admin Login</h3>
 
-    <div v-if="generalError" class="alert alert-danger" role="alert">
-      {{ generalError }}
+    <div
+      v-if="generalError"
+      class="alert alert-danger text-center p-2 mb-3 small"
+    >
+      <i class="fa fa-exclamation-triangle me-1"></i> {{ generalError }}
     </div>
 
     <div v-if="login" class="text-center mb-4">
@@ -116,12 +133,15 @@ function handleLogout() {
         <label class="form-label">Email Address</label>
         <input
           v-model="email"
-          type="email"
-          :class="['form-control', { 'is-invalid': errorEmail }]"
+          type="text"
+          class="form-control"
+          :class="{ 'is-invalid': errorEmail }"
+          @input="errorEmail = null"
           placeholder="admin@example.com"
-          required
         />
-        <div v-if="errorEmail" class="invalid-feedback">{{ errorEmail }}</div>
+        <div v-if="errorEmail" class="invalid-feedback d-block text-start">
+          {{ errorEmail }}
+        </div>
       </div>
 
       <div class="mb-3">
@@ -129,11 +149,12 @@ function handleLogout() {
         <input
           v-model="password"
           type="password"
-          :class="['form-control', { 'is-invalid': errorPassword }]"
+          class="form-control"
+          :class="{ 'is-invalid': errorPassword }"
+          @input="errorPassword = null"
           placeholder="••••••"
-          required
         />
-        <div v-if="errorPassword" class="invalid-feedback">
+        <div v-if="errorPassword" class="invalid-feedback d-block text-start">
           {{ errorPassword }}
         </div>
       </div>
@@ -179,7 +200,19 @@ function handleLogout() {
 .auth-view .form-label {
   font-size: 0.95rem;
 }
+
+/* --- Logic CSS hiển thị lỗi giống LoginView --- */
 .is-invalid {
   border-color: #dc3545;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5zM6 8.2a.3.3 0 000 .6.3.3 0 000-.6z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.invalid-feedback {
+  font-size: 0.875em;
+  color: #dc3545;
+  margin-top: 0.25rem;
 }
 </style>
